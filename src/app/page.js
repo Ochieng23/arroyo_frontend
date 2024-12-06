@@ -6,6 +6,7 @@ import Feature from "@/components/Feature";
 import WhyLoreax from "@/components/Why";
 import Faq from "@/components/Fqa";
 import Footer from "@/components/Footer";
+import CallToAction from "@/components/Cta";
 export default function Home() {
   return (
     <>
@@ -15,6 +16,7 @@ export default function Home() {
       <Feature />
       <WhyLoreax />
       <Faq />
+      <CallToAction />
       <Footer />
 
       {/* <div className="flex flex-col items-center justify-center min-h-screen">
