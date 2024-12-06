@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Explainer from "@/components/Explainer";
 import Feature from "@/components/Feature";
+import WhyLoreax from "@/components/Why";
 export default function Home() {
   return (
     <>
@@ -10,6 +11,7 @@ export default function Home() {
       <Hero />
       <Explainer />
       <Feature />
+      <WhyLoreax />
       <div className="flex flex-col items-center justify-center min-h-screen">
         <h1 className="text-4xl font-bold">Arroyo Coming Soon</h1>
         <p className="mt-4 text-lg text-center">
