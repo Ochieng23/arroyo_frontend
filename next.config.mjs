@@ -8,6 +8,12 @@ const nextConfig = {
         // Optional: Specify a path if needed
         // pathname: '/dhz4c0oae/image/upload/**',
       },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+        // Optional: Specify a path if needed
+        // pathname: '/dhz4c0oae/image/upload/**',
+      }
       // Add more patterns if necessary
     ],
   },
