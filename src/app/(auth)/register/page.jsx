@@ -21,14 +21,14 @@ export default function SignUp() {
       <div className="relative z-10 flex-1 flex items-center justify-center md:justify-start px-6 md:px-12 lg:px-24">
         <div className="bg-white bg-opacity-90 shadow-lg rounded-2xl px-8 py-6 w-full max-w-md">
           {/* Logo */}
-          <div className="text-center mb-6">
+          <Link href="/" className="flex justify-center text-center mb-6">
             <Image
               src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1733474194/Frame_2085663663_i0cui1.png"
               alt="Loreax Logo"
               width={120}
               height={40}
             />
-          </div>
+          </Link>
 
           {/* Title */}
           <h2 className="text-2xl md:text-3xl font-bold text-purple-700 text-center mb-2">
