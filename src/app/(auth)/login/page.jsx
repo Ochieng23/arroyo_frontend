@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Login() {
   return (
     <div className="relative h-screen w-full flex flex-col md:flex-row overflow-x-hidden">
-      {/* Background Image */}
+      {/* Background Image & Overlay */}
       <div className="absolute inset-0">
         <Image
           src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1733729131/image_uqf9uw.png"
@@ -13,13 +13,12 @@ export default function Login() {
           style={{ objectFit: "cover" }}
           priority
         />
-        {/* Overlay for better form visibility */}
         <div className="absolute inset-0 bg-black opacity-40"></div>
       </div>
 
-      {/* Login Form Container */}
+      {/* Login Form Container (pure white background) */}
       <div className="relative z-10 flex-1 flex items-center justify-start px-6 md:px-12 lg:px-24">
-        <div className="bg-white bg-opacity-90 shadow-lg rounded-2xl px-8 py-6 w-full max-w-md flex flex-col items-center">
+        <div className="bg-white shadow-lg rounded-2xl px-8 py-6 w-full max-w-md flex flex-col items-center">
           {/* Logo */}
           <Link href="/" className="mb-6">
             <Image
@@ -94,7 +93,7 @@ export default function Login() {
           <div className="flex justify-center space-x-4 w-full">
             <button className="flex items-center px-4 py-2 border rounded-md text-sm text-gray-700 hover:bg-gray-100">
               <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png"
+                src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735543615/Google_Logo_yxu2xp.png"
                 alt="Google"
                 width={20}
                 height={20}
@@ -103,7 +102,7 @@ export default function Login() {
             </button>
             <button className="flex items-center px-4 py-2 border rounded-md text-sm text-gray-700 hover:bg-gray-100">
               <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Apple_logo_black.svg"
+                src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735543009/Apple_Logo_lkykgq.png"
                 alt="Apple"
                 width={20}
                 height={20}

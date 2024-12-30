@@ -17,11 +17,14 @@ export default function SignUp() {
         <div className="absolute inset-0 bg-black opacity-40"></div>
       </div>
 
-      {/* Sign-Up Form Container */}
+      {/* Sign-Up Form Container (same solid-white background as login) */}
       <div className="relative z-10 flex-1 flex items-center justify-center md:justify-start px-6 md:px-12 lg:px-24">
-        <div className="bg-white bg-opacity-90 shadow-lg rounded-2xl px-8 py-6 w-full max-w-md">
+        <div className="bg-white shadow-lg rounded-2xl px-8 py-6 w-full max-w-md flex flex-col">
           {/* Logo */}
-          <Link href="/" className="flex justify-center text-center mb-6">
+          <Link
+            href="/"
+            className="flex justify-center text-center mb-6"
+          >
             <Image
               src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1733474194/Frame_2085663663_i0cui1.png"
               alt="Loreax Logo"
@@ -78,8 +81,8 @@ export default function SignUp() {
             <div className="grid grid-cols-1 sm:grid-cols-2 text-sm text-gray-600">
               <div className="space-y-2">
                 <div>
-                  <input type="checkbox" className="mr-2" disabled />8
-                  characters minimum
+                  <input type="checkbox" className="mr-2" disabled />
+                  8 characters minimum
                 </div>
                 <div>
                   <input type="checkbox" className="mr-2" disabled />
@@ -118,7 +121,7 @@ export default function SignUp() {
           <div className="flex justify-center space-x-4">
             <button className="flex items-center px-4 py-2 border rounded-md text-sm text-gray-700 hover:bg-gray-100">
               <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png"
+                src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735543615/Google_Logo_yxu2xp.png"
                 alt="Google"
                 width={20}
                 height={20}
@@ -127,7 +130,7 @@ export default function SignUp() {
             </button>
             <button className="flex items-center px-4 py-2 border rounded-md text-sm text-gray-700 hover:bg-gray-100">
               <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Apple_logo_black.svg"
+                src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735543009/Apple_Logo_lkykgq.png"
                 alt="Apple"
                 width={20}
                 height={20}
@@ -140,7 +143,7 @@ export default function SignUp() {
           <p className="text-xs text-center text-gray-500 mt-6">
             By clicking the Sign Up button, you agree to our{" "}
             <a href="#" className="text-purple-600 underline">
-              Terms & Conditions
+              Terms &amp; Conditions
             </a>
             .
           </p>
