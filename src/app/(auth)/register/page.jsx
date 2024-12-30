@@ -21,10 +21,7 @@ export default function SignUp() {
       <div className="relative z-10 flex-1 flex items-center justify-center md:justify-start px-6 md:px-12 lg:px-24">
         <div className="bg-white shadow-lg rounded-2xl px-8 py-6 w-full max-w-md flex flex-col">
           {/* Logo */}
-          <Link
-            href="/"
-            className="flex justify-center text-center mb-6"
-          >
+          <Link href="/" className="flex justify-center text-center mb-6">
             <Image
               src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1733474194/Frame_2085663663_i0cui1.png"
               alt="Loreax Logo"
@@ -75,6 +72,24 @@ export default function SignUp() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
               />
+            </div>
+
+            {/* Role Selection */}
+            <div>
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Are you a Creator or a Fan?
+              </label>
+              <select
+                id="role"
+                name="role"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="creator">Creator</option>
+                <option value="fan">Fan</option>
+              </select>
             </div>
 
             {/* Password Conditions */}
