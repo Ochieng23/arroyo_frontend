@@ -5,11 +5,12 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 
-// Icons (choose whichever suits your design best)
-import { RxDashboard } from "react-icons/rx"; // e.g. for My Dashboard
-import { FiBarChart2, FiDollarSign, FiBell, FiHeart, FiSpeaker } from "react-icons/fi";
-import { HiOutlineMegaphone } from "react-icons/hi";
+// Icons
+import { RxDashboard } from "react-icons/rx";
+import { FiBarChart2, FiDollarSign, FiBell, FiHeart } from "react-icons/fi";
 import { FiSettings, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+// Replace HiOutlineMegaphone with HiOutlineSpeakerphone, which actually exists:
+import { HiOutlineSpeakerphone } from "react-icons/hi";
 
 const SidebarLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,7 +44,6 @@ const SidebarLayout = ({ children }) => {
     router.push(href);
   };
 
-  // Example menu items that match your Figma:
   const menuItems = [
     {
       href: "/dashboard",
@@ -51,32 +51,28 @@ const SidebarLayout = ({ children }) => {
       label: "My Dashboard",
     },
     {
-      href: "/dashboard/insights",
+        href: "/upload",
+        // Use HiOutlineSpeakerphone instead of HiOutlineMegaphone
+        icon: <HiOutlineSpeakerphone size={17} />,
+        label: "Upload Content",
+      },
+    {
+      href: "/insights",
       icon: <FiBarChart2 size={17} />,
       label: "Insights",
     },
     {
-      href: "/dashboard/payouts",
+      href: "/payouts",
       icon: <FiDollarSign size={17} />,
       label: "Payouts",
     },
     {
-      href: "/dashboard/fanclub",
-      icon: <FiHeart size={17} />,
-      label: "Fan Club",
-    },
-    {
-      href: "/dashboard/promotions",
-      icon: <HiOutlineMegaphone size={17} />,
-      label: "Promotions",
-    },
-    {
-      href: "/dashboard/notifications",
+      href: "/notifications",
       icon: <FiBell size={17} />,
       label: "Notifications",
     },
     {
-      href: "/dashboard/settings",
+      href: "/settings",
       icon: <FiSettings size={17} />,
       label: "Settings",
     },
@@ -99,14 +95,14 @@ const SidebarLayout = ({ children }) => {
             </div>
           </Link>
 
-          {/* Label if you want a title like “Creator Dashboard” */}
-          <h5
+          {/* Dashboard Label (visible in expanded sidebar) */}
+          {/* <h5
             className={`mt-4 text-center font-semibold ${
               sidebarOpen ? "block" : "hidden"
             } lg:block`}
           >
             My Dashboard
-          </h5>
+          </h5> */}
 
           {/* Menu Items */}
           <div className="mt-4 flex flex-col">
@@ -141,13 +137,13 @@ const SidebarLayout = ({ children }) => {
         {/* Bottom Section: Upload + Logout */}
         <div className="flex flex-col items-center">
           {/* “Upload content” button */}
-          <button
+          {/* <button
             className={`mb-4 w-full rounded-md bg-purple-600 py-2 text-white hover:bg-purple-700 transition-colors duration-200 ${
               sidebarOpen ? "block" : "hidden"
             } lg:block`}
           >
             Upload content
-          </button>
+          </button> */}
 
           {/* Logout button */}
           <button
