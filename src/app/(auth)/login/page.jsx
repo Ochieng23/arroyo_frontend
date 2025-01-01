@@ -1,7 +1,55 @@
+"use client"; // Needed if you're in Next.js 13+ 'app' directory using a Client Component
+
+import { useState } from "react";
+import { useRouter } from "next/navigation"; // or "next/router" if using pages router
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Login() {
+  const router = useRouter();
+
+  // State hooks for email and password
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Make POST request to your backend
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        
+        // ^ "credentials: 'include'" if you need cookies for sessions
+      });
+
+      if (!response.ok) {
+        // Handle server error or unauthorized
+        const errorData = await response.json();
+        console.error("Login failed:", errorData.error || response.statusText);
+        // You might display an error message to the user here
+        return;
+      }
+
+      // Parse response
+      const data = await response.json();
+      const userRole = data.user?.role;
+
+      // Check the user role and redirect
+      if (userRole === "creator") {
+        router.push("/dashboard");
+      } else {
+        // Default to fan (or anything else) goes to /home
+        router.push("/home");
+      }
+    } catch (err) {
+      console.error("Error during login:", err);
+      // Show error message to the user if needed
+    }
+  };
+
   return (
     <div className="relative h-screen w-full flex flex-col md:flex-row overflow-x-hidden">
       {/* Background Image & Overlay */}
@@ -38,7 +86,7 @@ export default function Login() {
           </p>
 
           {/* Form */}
-          <form className="w-full space-y-4">
+          <form onSubmit={handleSubmit} className="w-full space-y-4">
             {/* Email Field */}
             <div>
               <label
@@ -52,7 +100,10 @@ export default function Login() {
                 name="email"
                 type="email"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md 
+                           focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
 
@@ -69,14 +120,18 @@ export default function Login() {
                 name="password"
                 type="password"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md 
+                           focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 transition"
+              className="w-full bg-purple-600 text-white py-2 
+                         rounded-md hover:bg-purple-700 transition"
             >
               Log in
             </button>

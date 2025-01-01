@@ -1,7 +1,54 @@
+"use client"; // Only needed if using Next.js app router in a client component
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function SignUp() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("creator");
+
+  // Track password checks
+  const [passwordChecks, setPasswordChecks] = useState({
+    hasMinLength: false,
+    hasNumber: false,
+    hasLetter: false,
+    hasSpecialChar: false,
+  });
+
+  // Validate password on every keystroke
+  const handlePasswordChange = (e) => {
+    const val = e.target.value;
+    setPassword(val);
+
+    setPasswordChecks({
+      hasMinLength: val.length >= 8,
+      hasNumber: /\d/.test(val),            // checks for at least one digit
+      hasLetter: /[a-zA-Z]/.test(val),      // checks for at least one letter
+      hasSpecialChar: /[^a-zA-Z0-9]/.test(val), // checks for special characters
+    });
+  };
+
+  // Handle form submission (POST to localhost:8000/auth/register)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:8000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role }),
+      });
+      if (!response.ok) {
+        console.error("Registration failed:", response.statusText);
+        return;
+      }
+      console.log("Registration successful!");
+      // Optionally redirect or show success message
+    } catch (error) {
+      console.error("Error during registration:", error);
+    }
+  };
+
   return (
     <div className="relative h-screen w-full flex flex-col md:flex-row overflow-x-hidden">
       {/* Background Image */}
@@ -17,7 +64,7 @@ export default function SignUp() {
         <div className="absolute inset-0 bg-black opacity-40"></div>
       </div>
 
-      {/* Sign-Up Form Container (same solid-white background as login) */}
+      {/* Sign-Up Form Container */}
       <div className="relative z-10 flex-1 flex items-center justify-center md:justify-start px-6 md:px-12 lg:px-24">
         <div className="bg-white shadow-lg rounded-2xl px-8 py-6 w-full max-w-md flex flex-col">
           {/* Logo */}
@@ -39,7 +86,7 @@ export default function SignUp() {
           </p>
 
           {/* Form */}
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
               <label
@@ -52,7 +99,9 @@ export default function SignUp() {
                 id="email"
                 name="email"
                 type="email"
+                value={email}
                 required
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
@@ -69,7 +118,9 @@ export default function SignUp() {
                 id="password"
                 name="password"
                 type="password"
+                value={password}
                 required
+                onChange={handlePasswordChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
@@ -85,6 +136,8 @@ export default function SignUp() {
               <select
                 id="role"
                 name="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-purple-500 focus:border-purple-500"
               >
                 <option value="creator">Creator</option>
@@ -92,25 +145,45 @@ export default function SignUp() {
               </select>
             </div>
 
-            {/* Password Conditions */}
+            {/* Password Conditions (dynamically updated) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 text-sm text-gray-600">
               <div className="space-y-2">
                 <div>
-                  <input type="checkbox" className="mr-2" disabled />
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={passwordChecks.hasMinLength}
+                    readOnly
+                  />
                   8 characters minimum
                 </div>
                 <div>
-                  <input type="checkbox" className="mr-2" disabled />
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={passwordChecks.hasNumber}
+                    readOnly
+                  />
                   At least 1 number
                 </div>
               </div>
               <div className="space-y-2">
                 <div>
-                  <input type="checkbox" className="mr-2" disabled />
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={passwordChecks.hasLetter}
+                    readOnly
+                  />
                   At least 1 letter
                 </div>
                 <div>
-                  <input type="checkbox" className="mr-2" disabled />
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={passwordChecks.hasSpecialChar}
+                    readOnly
+                  />
                   At least 1 special character
                 </div>
               </div>
