@@ -1,26 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SidebarLayout from "@/components/CreatorDashboardLayout";
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaYoutube,
-  FaSpotify,
-  FaInstagram,
-} from "react-icons/fa";
+import { useUser } from "@/contexts/userContext";
+import { FaFacebookF, FaTwitter, FaYoutube, FaSpotify, FaInstagram } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 
-// User / Profile Data
-const user = {
+// Dummy user data for display
+const user1 = {
   name: "Malik Kwezi",
   tagline: "Let the rhythm take control, feel the fire in your soul.",
   occupation: "Musician",
   countryFlag: "🇰🇪",
   username: "Malik_Kwezi",
   link: "https://loreax.com/Malik_Kwezi",
+  bannerImage:
+    "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737481/image_2_vfed7a.png",
+  profileImage:
+    "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png",
   socialLinks: [
     { icon: <FaFacebookF size={20} />, href: "https://facebook.com" },
     { icon: <FaTwitter size={20} />, href: "https://twitter.com" },
@@ -31,10 +30,10 @@ const user = {
   ],
 };
 
-// Tab names
+// Tabs for the creator dashboard
 const tabs = ["Home", "Collections", "Membership", "About"];
 
-// Dummy recent posts for Home tab
+// Sample posts
 const posts = [
   {
     id: 1,
@@ -58,19 +57,43 @@ const posts = [
   },
 ];
 
-// Dummy membership info
-const totalMembers = 1247; // e.g., total membership count
+// Example membership count
+const totalMembers = 1247;
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Home");
   const router = useRouter();
 
-  // Handle clicking the Upload button => route to /upload
+  // This 'user' comes from context after login
+  const { user, setUser } = useUser();
+  console.log("Context user:", user);
+
+  // Attempt to fetch user details from backend if we have user.id
+  const fetchUserDetails = () => {
+    if (!user?.id) return;
+
+    fetch(`http://localhost:8000/users/${user.id}`)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Fetched user details:", data);
+        setUser((prev) => ({ ...prev, ...data }));
+      })
+      .catch((error) => {
+        console.error("Error fetching user details:", error);
+      });
+  };
+
+  useEffect(() => {
+    fetchUserDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Handle "Upload content" button
   const handleUploadRedirect = () => {
     router.push("/upload");
   };
 
-  // Render tab-specific content
+  // Render content inside each tab
   const renderTabContent = () => {
     switch (activeTab) {
       case "Home":
@@ -90,16 +113,14 @@ export default function Dashboard() {
                       fill
                       style={{ objectFit: "cover" }}
                     />
-                    {/* Info overlay top-left */}
                     <div className="absolute left-2 top-2 rounded-full bg-white/80 px-2 py-0.5 text-xs">
                       {post.daysAgo}
                     </div>
-                    {/* Info overlay bottom-right */}
                     <div className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-xs text-white">
                       {post.time}
                     </div>
                   </div>
-                  <div className="mt-3 flex flex-col flex-grow">
+                  <div className="mt-3 flex-grow">
                     <h4 className="font-semibold text-gray-800">{post.title}</h4>
                     <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
                       <span>{post.price}</span>
@@ -111,13 +132,12 @@ export default function Dashboard() {
             </div>
           </div>
         );
+
       case "Collections":
         return (
           <div className="fade-in min-h-[300px]">
-            <h3 className="mb-3 text-xl font-bold text-gray-800">
-              Your Collections
-            </h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="mb-3 text-xl font-bold text-gray-800">Your Collections</h3>
+            <p className="mb-4 text-gray-600">
               Group your content by themes, series, or categories.
             </p>
             <div className="rounded-md bg-white p-4 shadow">
@@ -128,6 +148,7 @@ export default function Dashboard() {
             </div>
           </div>
         );
+
       case "Membership":
         return (
           <div className="fade-in min-h-[300px]">
@@ -140,7 +161,6 @@ export default function Dashboard() {
               .
             </p>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {/* Dummy membership tier examples */}
               <div className="rounded-md bg-white p-4 shadow">
                 <h4 className="text-base font-semibold text-gray-800">
                   Bronze Fan
@@ -151,14 +171,18 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="rounded-md bg-white p-4 shadow">
-                <h4 className="text-base font-semibold text-gray-800">Silver Star</h4>
+                <h4 className="text-base font-semibold text-gray-800">
+                  Silver Star
+                </h4>
                 <p className="text-xs text-gray-500">Ksh.500 / month</p>
                 <div className="mt-2 text-sm text-gray-700">
                   Includes behind-the-scenes + Q&A
                 </div>
               </div>
               <div className="rounded-md bg-white p-4 shadow">
-                <h4 className="text-base font-semibold text-gray-800">Gold VIP</h4>
+                <h4 className="text-base font-semibold text-gray-800">
+                  Gold VIP
+                </h4>
                 <p className="text-xs text-gray-500">Ksh.1,000 / month</p>
                 <div className="mt-2 text-sm text-gray-700">
                   Early access + direct fan chats
@@ -167,12 +191,11 @@ export default function Dashboard() {
             </div>
           </div>
         );
+
       case "About":
         return (
           <div className="fade-in min-h-[300px]">
-            <h3 className="mb-3 text-xl font-bold text-gray-800">
-              About Malik Kwezi
-            </h3>
+            <h3 className="mb-3 text-xl font-bold text-gray-800">About Malik Kwezi</h3>
             <p className="leading-relaxed">
               Malik Kwezi is a passionate musician from Kenya, known for
               blending African rhythms with contemporary sounds. With a
@@ -184,23 +207,27 @@ export default function Dashboard() {
             </p>
           </div>
         );
+
       default:
         return null;
     }
   };
 
+  // Fallback to dummy banner/profile if user.bannerImage/user.profileImage aren't set
+  const bannerSrc = user?.bannerImage || user1.bannerImage;
+  const profileSrc = user?.profileImage || user1.profileImage;
+
   return (
     <SidebarLayout>
       <div className="relative flex flex-col bg-[#F8F5FF] min-h-screen p-4">
-        {/* Banner / Cover Image + Upload Button */}
+        {/* Banner Image from user context or dummy fallback */}
         <div className="relative h-[240px] w-full overflow-hidden rounded-xl">
           <Image
-            src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737481/image_2_vfed7a.png"
+            src={bannerSrc}
             alt="Banner"
             fill
             style={{ objectFit: "cover" }}
           />
-          {/* Place upload button near the bottom-right of the banner */}
           <button
             onClick={handleUploadRedirect}
             className="absolute bottom-4 right-4 z-10 rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition"
@@ -209,43 +236,43 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Profile Avatar + Info (overlap the banner by -40px) */}
+        {/* Profile Image from user context or dummy fallback */}
         <div className="relative mt-[-40px] flex flex-col items-center">
           <div className="relative h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-white">
             <Image
-              src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png"
+              src={profileSrc}
               alt="Profile"
               fill
               style={{ objectFit: "cover" }}
             />
           </div>
 
-          <h2 className="mt-3 text-2xl font-bold text-purple-800">{user.name}</h2>
+          <h2 className="mt-3 text-2xl font-bold text-purple-800">{user1.name}</h2>
           <p className="mt-1 max-w-md text-center text-sm text-gray-600">
-            {user.tagline}
+            {user1.tagline}
           </p>
 
           {/* Occupation + Country */}
           <div className="mt-2 flex items-center gap-1 text-sm text-gray-500">
-            <span>{user.countryFlag}</span>
-            <span>{user.occupation}</span>
+            <span>{user1.countryFlag}</span>
+            <span>{user1.occupation}</span>
           </div>
 
           {/* Link */}
           <div className="mt-1 text-sm text-purple-600">
             <a
-              href={user.link}
+              href={user1.link}
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
             >
-              Loreax.com/{user.username}
+              Loreax.com/{user1.username}
             </a>
           </div>
 
-          {/* Social Icons */}
+          {/* Social Icons (dummy) */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {user.socialLinks.map((social, i) => (
+            {user1.socialLinks.map((social, i) => (
               <a
                 key={i}
                 href={social.href}
@@ -272,14 +299,14 @@ export default function Dashboard() {
               >
                 {tab}
                 {activeTab === tab && (
-                  <span className="absolute left-1/2 bottom-[-6px] h-2 w-2 -translate-x-1/2 rounded-full bg-green-400"></span>
+                  <span className="absolute left-1/2 bottom-[-6px] h-2 w-2 -translate-x-1/2 rounded-full bg-green-400" />
                 )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tab Content Container (smooth transitions, fixed min-h) */}
+        {/* Tab Content */}
         <div className="mt-6 min-h-[400px] transition-all duration-300">
           {renderTabContent()}
         </div>

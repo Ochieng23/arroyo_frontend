@@ -1,9 +1,12 @@
-"use client"; // Needed if you're in Next.js 13+ 'app' directory using a Client Component
+"use client"; // Needed if you're in Next.js 13+ 'app' directory
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // or "next/router" if using pages router
+import { useRouter } from "next/navigation"; // or "next/router" if using Pages Router
 import Image from "next/image";
 import Link from "next/link";
+
+// Import our user context hook
+import { useUser } from "../../../contexts/userContext";
 
 export default function Login() {
   const router = useRouter();
@@ -11,6 +14,9 @@ export default function Login() {
   // State hooks for email and password
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Access setUser from context
+  const { setUser } = useUser();
 
   // Handle form submission
   const handleSubmit = async (e) => {
@@ -21,32 +27,33 @@ export default function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        
-        // ^ "credentials: 'include'" if you need cookies for sessions
+        // credentials: 'include' if you need cookies for sessions
       });
 
       if (!response.ok) {
         // Handle server error or unauthorized
         const errorData = await response.json();
         console.error("Login failed:", errorData.error || response.statusText);
-        // You might display an error message to the user here
         return;
       }
 
       // Parse response
       const data = await response.json();
-      const userRole = data.user?.role;
 
-      // Check the user role and redirect
+      // Update context with the user object from the response
+      // (This triggers localStorage to update as well, thanks to your context logic)
+      setUser(data.user); 
+
+      // Check the user role for redirect
+      const userRole = data.user?.role;
       if (userRole === "creator") {
         router.push("/dashboard");
       } else {
-        // Default to fan (or anything else) goes to /home
         router.push("/home");
       }
     } catch (err) {
       console.error("Error during login:", err);
-      // Show error message to the user if needed
+      // Optionally show error message to the user
     }
   };
 
@@ -61,7 +68,7 @@ export default function Login() {
           style={{ objectFit: "cover" }}
           priority
         />
-        <div className="absolute inset-0 bg-black opacity-40"></div>
+        <div className="absolute inset-0 bg-black opacity-40" />
       </div>
 
       {/* Login Form Container (pure white background) */}
@@ -139,9 +146,9 @@ export default function Login() {
 
           {/* Divider */}
           <div className="flex items-center my-6 w-full">
-            <div className="flex-grow border-t border-gray-300"></div>
+            <div className="flex-grow border-t border-gray-300" />
             <span className="px-3 text-gray-500 text-sm">or</span>
-            <div className="flex-grow border-t border-gray-300"></div>
+            <div className="flex-grow border-t border-gray-300" />
           </div>
 
           {/* Social Login */}

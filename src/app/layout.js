@@ -1,15 +1,30 @@
 import localFont from "next/font/local";
 import "./globals.css";
 
+// Import the UserProvider
+import { UserProvider } from "../contexts/userContext.jsx";
+
+// Variable fonts
 const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+  src: [
+    {
+      path: "./fonts/GeistVF.woff",
+      weight: "100 900",
+      style: "normal",
+    },
+  ],
   variable: "--font-geist-sans",
-  weight: "100 900",
 });
+
 const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+  src: [
+    {
+      path: "./fonts/GeistMonoVF.woff",
+      weight: "100 900",
+      style: "normal",
+    },
+  ],
   variable: "--font-geist-mono",
-  weight: "100 900",
 });
 
 export const metadata = {
@@ -23,7 +38,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        {/* Wrap your app in UserProvider here */}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   );
