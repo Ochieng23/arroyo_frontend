@@ -13,9 +13,22 @@ const nextConfig = {
         hostname: "upload.wikimedia.org",
         // Optional: Specify a path if needed
         // pathname: '/dhz4c0oae/image/upload/**',
-      }
-      // Add more patterns if necessary
+      },
+      // Add the following pattern for Azure Blob Storage
+      {
+        protocol: "https",
+        hostname: "caziniaifiles.blob.core.windows.net",
+        pathname: "/**", // This allows all paths under the hostname
+      },
     ],
+    // Alternatively, you can use the 'domains' array if you prefer
+    /*
+    domains: [
+      "res.cloudinary.com",
+      "upload.wikimedia.org",
+      "caziniaifiles.blob.core.windows.net",
+    ],
+    */
   },
 };
 

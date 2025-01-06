@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from "react";
-import SidebarLayout from "@/components/CreatorDashboardLayout";
 import { useUser } from "@/contexts/userContext";
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // Import Next.js Image component for optimized images
+import Image from "next/image"; 
+import UserSidebarLayout from "@/components/FanDashboardLayout";// Import Next.js Image component for optimized images
 
-export default function SetupAccount() {
+export default function Setup() {
   const { user: currentUser, loading: userLoading, setUser } = useUser(); // Destructure setUser
   const router = useRouter();
 
@@ -199,9 +199,7 @@ export default function SetupAccount() {
         const response = await fetch("http://localhost:8000/upload_azure", {
           method: "POST",
           body: uploadFormData,
-          headers: {
-            // Include any required headers here, such as authentication
-          },
+          // Headers like authentication tokens can be added here if required
         });
 
         if (!response.ok) {
@@ -326,11 +324,11 @@ export default function SetupAccount() {
   if (userLoading) {
     console.log("User data is loading. Displaying loading indicator.");
     return (
-      <SidebarLayout>
+      <UserSidebarLayout>
         <div className="min-h-screen w-full flex items-center justify-center">
           <p className="text-gray-500">Loading user data...</p>
         </div>
-      </SidebarLayout>
+      </UserSidebarLayout>
     );
   }
 
@@ -338,16 +336,16 @@ export default function SetupAccount() {
   if (!currentUser) {
     console.log("User is not authenticated. Displaying authentication message.");
     return (
-      <SidebarLayout>
+      <UserSidebarLayout>
         <div className="min-h-screen w-full flex items-center justify-center">
           <p className="text-red-500">You need to be logged in to set up your account.</p>
         </div>
-      </SidebarLayout>
+      </UserSidebarLayout>
     );
   }
 
   return (
-    <SidebarLayout>
+    <UserSidebarLayout>
       {/* Container for the entire form area */}
       <div className="min-h-screen w-full bg-white p-6 md:p-10 flex items-start justify-center">
         <div className="w-full max-w-lg">
@@ -419,17 +417,21 @@ export default function SetupAccount() {
                     <Image
                       src={profileImagePreview}
                       alt="Profile picture preview"
-                      layout="fill"
-                      objectFit="cover"
+                      fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 100vw,
+                             (max-width: 1200px) 50vw,
+                             33vw"
                     />
                   ) : (
                     <Image
                       src="/placeholder-avatar.jpg" // Ensure this placeholder exists in the public directory
-                      alt="Profile picture preview"
-                      layout="fill"
-                      objectFit="cover"
+                      alt="Profile picture placeholder"
+                      fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 100vw,
+                             (max-width: 1200px) 50vw,
+                             33vw"
                     />
                   )}
                 </div>
@@ -689,6 +691,6 @@ export default function SetupAccount() {
           </form>
         </div>
       </div>
-    </SidebarLayout>
+    </UserSidebarLayout>
   );
 }

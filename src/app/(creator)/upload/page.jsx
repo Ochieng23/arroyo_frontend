@@ -1,7 +1,6 @@
-// src/app/(creator)/upload/page.jsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import SidebarLayout from "@/components/CreatorDashboardLayout";
 import {
   AiOutlineLoading3Quarters,
@@ -24,39 +23,59 @@ export default function UploadContent() {
   const [thumbnailPreviewSrc, setThumbnailPreviewSrc] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [title, setTitle] = useState("");
-  const [about, setAbout] = useState(""); // New State for About
+  const [about, setAbout] = useState(""); // State for About
   const [price, setPrice] = useState("");
   const [priceType, setPriceType] = useState("paid"); // 'paid' or 'free'
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
-  const [collections, setCollections] = useState([]);
-  const [selectedCollection, setSelectedCollection] = useState("");
-  const [newCollectionName, setNewCollectionName] = useState("");
-  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+  const [isCreatingLibrary, setIsCreatingLibrary] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const { user } = useUser();
+  const [newLibraryName, setNewLibraryName] = useState(""); // Renamed from newCollectionName
+  const [selectedLibrary, setSelectedLibrary] = useState(""); // Renamed from selectedCollection
+  const { user, loading } = useUser(); // Ensure 'user.id' exists
 
-  // Fetch existing collections on component mount
-  useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/collection", {
-          credentials: "include", // include cookies if needed
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCollections(data.collections); // Adjust based on your API response
-        } else {
-          console.error("Failed to fetch collections");
-        }
-      } catch (err) {
-        console.error("Error fetching collections:", err);
+  // Refs for file inputs to reset their values
+  const fileInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
+
+  // API Base URL from environment variables
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  // State to hold user details
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Fetch user details from backend based on user.id
+  const fetchUserDetails = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // If using session-based auth, include credentials
+        // credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user details: ${response.statusText}`);
       }
-    };
 
-    fetchCollections();
-  }, []);
+      const data = await response.json();
+      console.log("Fetched user details:", data);
+      setCurrentUser(data);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      setError("Error fetching user details.");
+    }
+  }, [API_BASE_URL, user?.id]);
+
+  // Fetch user details on component mount or when user.id changes
+  useEffect(() => {
+    fetchUserDetails();
+  }, [fetchUserDetails]);
 
   // Determine file icon based on MIME type
   const getFileIcon = useCallback((mimeType) => {
@@ -115,6 +134,7 @@ export default function UploadContent() {
     (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const selectedFile = e.target.files[0];
+        // Optional: Add file size/type validation here
         setFile(selectedFile);
         generatePreview(selectedFile, "file");
       }
@@ -127,6 +147,7 @@ export default function UploadContent() {
     (e) => {
       if (e.target.files && e.target.files.length > 0) {
         const selectedThumbnail = e.target.files[0];
+        // Optional: Add file size/type validation here
         setThumbnailFile(selectedThumbnail);
         generatePreview(selectedThumbnail, "thumbnail");
       }
@@ -138,12 +159,18 @@ export default function UploadContent() {
   const handleRemoveFile = useCallback(() => {
     setFile(null);
     setPreviewSrc(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }, []);
 
   // Handle removing the thumbnail
   const handleRemoveThumbnail = useCallback(() => {
     setThumbnailFile(null);
     setThumbnailPreviewSrc(null);
+    if (thumbnailInputRef.current) {
+      thumbnailInputRef.current.value = "";
+    }
   }, []);
 
   // Handle adding tags
@@ -160,42 +187,54 @@ export default function UploadContent() {
     setTags((prevTags) => prevTags.filter((tag) => tag !== tagToRemove));
   }, []);
 
-  // Handle creating a new collection
-  const handleCreateCollection = useCallback(async () => {
-    if (!newCollectionName.trim()) {
-      setError("Please enter a collection name.");
+  // Handle creating a new library
+  const handleCreateLibrary = useCallback(async () => {
+    if (!newLibraryName.trim()) {
+      setError("Please enter a library name.");
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:8000/collection", {
+      const response = await fetch(`${API_BASE_URL}/libraries`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // include cookies if needed
+        // If using session-based auth, include credentials
+        // credentials: "include",
         body: JSON.stringify({
-          name: newCollectionName.trim(),
-          user: user.id, // Associate collection with user
+          user_id: user.id, // Include user_id
+          name: newLibraryName.trim(),
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create collection.");
+        throw new Error(errorData.message || "Failed to create library.");
       }
 
       const data = await response.json();
-      setCollections((prevCollections) => [...prevCollections, data.collection]); // Adjust based on your API response
-      setSelectedCollection(data.collection._id);
-      setNewCollectionName("");
-      setIsCreatingCollection(false);
-      setSuccessMessage("Collection created successfully!");
+
+      // **Key Correction:** Use 'data.library' instead of 'data.collection'
+      if (data.library) {
+        // Update currentUser's libraries
+        setCurrentUser((prevUser) => ({
+          ...prevUser,
+          libraries: [...(prevUser.libraries || []), data.library],
+        }));
+        setSelectedLibrary(data.library._id);
+      } else {
+        throw new Error("Invalid response from server: 'library' not found.");
+      }
+
+      setNewLibraryName("");
+      setIsCreatingLibrary(false);
+      setSuccessMessage("Library created successfully!");
     } catch (err) {
-      console.error("Create Collection Error:", err);
+      console.error("Create Library Error:", err);
       setError(err.message);
     }
-  }, [newCollectionName, user.id]);
+  }, [newLibraryName, API_BASE_URL, user.id]);
 
   // Handle form submission
   const handleUpload = useCallback(
@@ -213,7 +252,10 @@ export default function UploadContent() {
         return;
       }
 
-      if (priceType === "paid" && (!price || isNaN(price) || parseFloat(price) <= 0)) {
+      if (
+        priceType === "paid" &&
+        (!price || isNaN(price) || parseFloat(price) <= 0)
+      ) {
         setError("Please enter a valid price for your content.");
         return;
       }
@@ -244,9 +286,11 @@ export default function UploadContent() {
         formData.append("file", file);
         formData.append("contentType", contentType);
 
-        const uploadResponse = await fetch("http://localhost:8000/upload_azure", {
+        const uploadResponse = await fetch(`${API_BASE_URL}/upload_azure`, {
           method: "POST",
           body: formData,
+          // If using session-based auth, include credentials
+          // credentials: "include",
         });
 
         if (!uploadResponse.ok) {
@@ -269,14 +313,21 @@ export default function UploadContent() {
           thumbnailFormData.append("file", thumbnailFile);
           thumbnailFormData.append("contentType", "thumbnail");
 
-          const thumbnailUploadResponse = await fetch("http://localhost:8000/upload_azure", {
-            method: "POST",
-            body: thumbnailFormData,
-          });
+          const thumbnailUploadResponse = await fetch(
+            `${API_BASE_URL}/upload_azure`,
+            {
+              method: "POST",
+              body: thumbnailFormData,
+              // If using session-based auth, include credentials
+              // credentials: "include",
+            }
+          );
 
           if (!thumbnailUploadResponse.ok) {
             const errorData = await thumbnailUploadResponse.json();
-            throw new Error(errorData.message || "Failed to upload thumbnail to Azure.");
+            throw new Error(
+              errorData.message || "Failed to upload thumbnail to Azure."
+            );
           }
 
           const thumbnailUploadData = await thumbnailUploadResponse.json();
@@ -288,29 +339,33 @@ export default function UploadContent() {
 
         // 3. Create content data with the file and thumbnail URLs
         const contentData = {
-          user: user.id, // Use the actual user ID from context
+          user_id: user.id, // Include user_id
           title: title.trim(),
           about: about.trim(), // Include the 'about' field
           type: contentType,
           url: fileUrl,
           thumbnail: thumbnailUrl, // Ensure thumbnail is set
           tags: tags,
-          collection: selectedCollection || null,
+          library: selectedLibrary || null, // **Changed from 'collection' to 'library'**
           price: priceType === "paid" ? parseFloat(price) : 0, // Include price
           priceType: priceType, // Include priceType
         };
 
-        const contentResponse = await fetch("http://localhost:8000/content", {
+        const contentResponse = await fetch(`${API_BASE_URL}/content`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          // If using session-based auth, include credentials
+          // credentials: "include",
           body: JSON.stringify(contentData),
         });
 
         if (!contentResponse.ok) {
           const errorData = await contentResponse.json();
-          throw new Error(errorData.message || "Failed to store content in the database.");
+          throw new Error(
+            errorData.message || "Failed to store content in the database."
+          );
         }
 
         const createdContent = await contentResponse.json();
@@ -319,16 +374,14 @@ export default function UploadContent() {
         setSuccessMessage("Content uploaded and stored successfully!");
 
         // Reset form
-        setFile(null);
-        setThumbnailFile(null);
-        setPreviewSrc(null);
-        setThumbnailPreviewSrc(null);
+        handleRemoveFile();
+        handleRemoveThumbnail();
         setTitle("");
         setAbout(""); // Reset 'about' field
         setPrice("");
         setPriceType("paid");
         setTags([]);
-        setSelectedCollection("");
+        setSelectedLibrary(""); // Reset selected library
       } catch (err) {
         console.error("Upload error:", err);
         setError(err.message);
@@ -343,16 +396,20 @@ export default function UploadContent() {
       contentType,
       thumbnailFile,
       tags,
-      selectedCollection,
+      selectedLibrary,
       price,
       priceType,
-      user.id,
+      handleRemoveFile,
+      handleRemoveThumbnail,
+      API_BASE_URL,
+      user.id, // Ensure user.id is included
     ]
   );
 
   // Memoized preview components to prevent unnecessary re-renders
   const filePreview = useMemo(() => {
-    if (!previewSrc) return <p className="text-sm text-gray-400">No file selected</p>;
+    if (!previewSrc)
+      return <p className="text-sm text-gray-400">No file selected</p>;
 
     if (contentType === "image") {
       return (
@@ -395,7 +452,7 @@ export default function UploadContent() {
       return (
         <div className="relative flex flex-col items-center justify-center w-full h-full p-4 bg-gray-50 rounded-md border border-gray-300">
           {getFileIcon(file.type)}
-          <p className="mt-2 text-sm font-medium text-gray-700">{file.name}</p>
+          <p className="mt-2 text-sm text-gray-700">{file.name}</p>
           <button
             type="button"
             onClick={handleRemoveFile}
@@ -497,6 +554,7 @@ export default function UploadContent() {
                       ? "video/*"
                       : "*/*"
                   }
+                  ref={fileInputRef}
                   className="block w-full cursor-pointer text-sm text-gray-600 file:mr-4 file:rounded file:border-0 file:bg-purple-600 file:px-4 file:py-2 file:text-white hover:file:bg-purple-700 focus:outline-none"
                   required
                 />
@@ -519,6 +577,7 @@ export default function UploadContent() {
                     type="file"
                     onChange={handleThumbnailChange}
                     accept="image/*"
+                    ref={thumbnailInputRef}
                     className="block w-full cursor-pointer text-sm text-gray-600 file:mr-4 file:rounded file:border-0 file:bg-purple-600 file:px-4 file:py-2 file:text-white hover:file:bg-purple-700 focus:outline-none"
                     required
                   />
@@ -653,51 +712,54 @@ export default function UploadContent() {
               </div>
             </div>
 
-            {/* Right column: Collections + Tags */}
+            {/* Right column: Libraries + Tags */}
             <div className="space-y-6">
-              {/* Collections Card */}
+              {/* Libraries Card */}
               <div className="rounded-md border border-gray-200 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-gray-700">Collections</h3>
+                <h3 className="mb-2 text-sm font-semibold text-gray-700">Libraries</h3>
                 <p className="mb-4 text-xs text-gray-500">
                   Helps your fans connect with related content and shared themes.
                 </p>
-                {/* Select Existing Collection */}
+                {/* Select Existing Library */}
                 <select
-                  value={selectedCollection}
-                  onChange={(e) => setSelectedCollection(e.target.value)}
+                  value={selectedLibrary}
+                  onChange={(e) => setSelectedLibrary(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="">-- Select a Collection --</option>
-                  {collections.map((collection) => (
-                    <option key={collection._id} value={collection._id}>
-                      {collection.name}
-                    </option>
-                  ))}
+                  <option value="">-- Select a Library --</option>
+                  {currentUser &&
+                    currentUser.libraries &&
+                    currentUser.libraries.map((library) => (
+                      // Ensure that 'library' is defined and has '_id'
+                      <option key={library._id} value={library._id}>
+                        {library.name}
+                      </option>
+                    ))}
                 </select>
-                {/* Option to Create New Collection */}
-                {!isCreatingCollection && (
+                {/* Option to Create New Library */}
+                {!isCreatingLibrary && (
                   <button
                     type="button"
                     className="mt-3 w-full rounded-md bg-purple-600 px-3 py-2 text-sm text-white hover:bg-purple-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    onClick={() => setIsCreatingCollection(true)}
+                    onClick={() => setIsCreatingLibrary(true)}
                   >
-                    + Create collection
+                    + Create Library
                   </button>
                 )}
-                {/* Create Collection Form */}
-                {isCreatingCollection && (
+                {/* Create Library Form */}
+                {isCreatingLibrary && (
                   <div className="mt-3 space-y-2">
                     <input
                       type="text"
-                      placeholder="New collection name"
-                      value={newCollectionName}
-                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      placeholder="New library name"
+                      value={newLibraryName}
+                      onChange={(e) => setNewLibraryName(e.target.value)}
                       className="w-full rounded-md border border-gray-300 p-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={handleCreateCollection}
+                        onClick={handleCreateLibrary}
                         className="flex-1 rounded-md bg-green-600 px-3 py-2 text-sm text-white hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
                         Create
@@ -705,8 +767,8 @@ export default function UploadContent() {
                       <button
                         type="button"
                         onClick={() => {
-                          setIsCreatingCollection(false);
-                          setNewCollectionName("");
+                          setIsCreatingLibrary(false);
+                          setNewLibraryName("");
                         }}
                         className="flex-1 rounded-md bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
                       >
@@ -777,7 +839,9 @@ export default function UploadContent() {
                 isProcessing ? "cursor-not-allowed bg-purple-400" : ""
               }`}
             >
-              {isProcessing && <AiOutlineLoading3Quarters className="animate-spin" />}
+              {isProcessing && (
+                <AiOutlineLoading3Quarters className="animate-spin" />
+              )}
               {isProcessing ? "Uploading..." : "Upload"}
             </button>
           </div>

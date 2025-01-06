@@ -1,3 +1,4 @@
+// app/dashboard/page.js
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -8,32 +9,10 @@ import { useUser } from "@/contexts/userContext";
 import { FaFacebookF, FaTwitter, FaYoutube, FaSpotify, FaInstagram } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 
-// Dummy user data for display
-const user1 = {
-  name: "Malik Kwezi",
-  tagline: "Let the rhythm take control, feel the fire in your soul.",
-  occupation: "Musician",
-  countryFlag: "🇰🇪",
-  username: "Malik_Kwezi",
-  link: "https://loreax.com/Malik_Kwezi",
-  bannerImage:
-    "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737481/image_2_vfed7a.png",
-  profileImage:
-    "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png",
-  socialLinks: [
-    { icon: <FaFacebookF size={20} />, href: "https://facebook.com" },
-    { icon: <FaTwitter size={20} />, href: "https://twitter.com" },
-    { icon: <FaYoutube size={20} />, href: "https://youtube.com" },
-    { icon: <SiTiktok size={20} />, href: "https://tiktok.com" },
-    { icon: <FaSpotify size={20} />, href: "https://spotify.com" },
-    { icon: <FaInstagram size={20} />, href: "https://instagram.com" },
-  ],
-};
-
 // Tabs for the creator dashboard
 const tabs = ["Home", "Collections", "Membership", "About"];
 
-// Sample posts
+// Sample posts (can be dynamic)
 const posts = [
   {
     id: 1,
@@ -65,10 +44,10 @@ export default function Dashboard() {
   const router = useRouter();
 
   // This 'user' comes from context after login
-  const { user, setUser } = useUser();
+  const { user, setUser, loading } = useUser();
   console.log("Context user:", user);
 
-  // Attempt to fetch user details from backend if we have user.id
+  // Fetch user details from backend if we have user.id
   const fetchUserDetails = () => {
     if (!user?.id) return;
 
@@ -205,6 +184,12 @@ export default function Dashboard() {
               push boundaries, making every heartbeat resonate with the
               power of music.
             </p>
+            {/* Display Niche */}
+            {user?.niche && (
+              <div className="mt-4 text-sm text-gray-700">
+                <strong>Niche:</strong> {user.niche}
+              </div>
+            )}
           </div>
         );
 
@@ -214,8 +199,8 @@ export default function Dashboard() {
   };
 
   // Fallback to dummy banner/profile if user.bannerImage/user.profileImage aren't set
-  const bannerSrc = user?.bannerImage || user1.bannerImage;
-  const profileSrc = user?.profileImage || user1.profileImage;
+  const bannerSrc = user?.bannerImage || "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737481/image_2_vfed7a.png";
+  const profileSrc = user?.profileImage || "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png";
 
   return (
     <SidebarLayout>
@@ -223,7 +208,7 @@ export default function Dashboard() {
         {/* Banner Image from user context or dummy fallback */}
         <div className="relative h-[240px] w-full overflow-hidden rounded-xl">
           <Image
-            src={bannerSrc}
+            src={user?.bannerImage}
             alt="Banner"
             fill
             style={{ objectFit: "cover" }}
@@ -240,39 +225,39 @@ export default function Dashboard() {
         <div className="relative mt-[-40px] flex flex-col items-center">
           <div className="relative h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-white">
             <Image
-              src={profileSrc}
+              src={user.profileImage}
               alt="Profile"
               fill
               style={{ objectFit: "cover" }}
             />
           </div>
 
-          <h2 className="mt-3 text-2xl font-bold text-purple-800">{user1.name}</h2>
+          <h2 className="mt-3 text-2xl font-bold text-purple-800">{user?.firstName} {user?.lastName}</h2>
           <p className="mt-1 max-w-md text-center text-sm text-gray-600">
-            {user1.tagline}
+            {user?.about || "Tell us about yourself..."}
           </p>
 
           {/* Occupation + Country */}
           <div className="mt-2 flex items-center gap-1 text-sm text-gray-500">
-            <span>{user1.countryFlag}</span>
-            <span>{user1.occupation}</span>
+            <span>{user?.countryFlag || "🌍"}</span>
+            <span>{user?.occupation || "Occupation not set"}</span>
           </div>
 
           {/* Link */}
           <div className="mt-1 text-sm text-purple-600">
             <a
-              href={user1.link}
+              href={`https://loreax.com/${user?.username || "username_not_set"}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
             >
-              Loreax.com/{user1.username}
+              Loreax.com/{user?.username || "username_not_set"}
             </a>
           </div>
 
-          {/* Social Icons (dummy) */}
+          {/* Social Icons */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {user1.socialLinks.map((social, i) => (
+            {user?.socialLinks?.map((social, i) => (
               <a
                 key={i}
                 href={social.href}
