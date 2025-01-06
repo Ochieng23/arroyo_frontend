@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import SidebarLayout from "@/components/CreatorDashboardLayout";
+import SidebarLayout from "@/components/CreatorDashboardLayout"; // Ensure correct casing
 import {
   AiOutlineLoading3Quarters,
   AiOutlineClose,
@@ -12,10 +12,12 @@ import {
   AiOutlineFileVideo,
   AiOutlineFileUnknown,
 } from "react-icons/ai";
-import { useUser } from "@/contexts/userContext";
+import { useUser } from "@/contexts/UserContext";
+import { useRouter } from "next/navigation"; // Correct import
 
 export default function UploadContent() {
-  // State Management
+  const router = useRouter(); // Initialize useRouter
+  const { user, loading: userLoading } = useUser(); // 'loading' renamed to 'userLoading' to avoid confusion
   const [contentType, setContentType] = useState("video"); // default: video
   const [file, setFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -33,7 +35,9 @@ export default function UploadContent() {
   const [successMessage, setSuccessMessage] = useState("");
   const [newLibraryName, setNewLibraryName] = useState(""); // Renamed from newCollectionName
   const [selectedLibrary, setSelectedLibrary] = useState(""); // Renamed from selectedCollection
-  const { user, loading } = useUser(); // Ensure 'user.id' exists
+  const [currentUser, setCurrentUser] = useState(null);
+
+  console.log("User in Context:", user);
 
   // Refs for file inputs to reset their values
   const fileInputRef = useRef(null);
@@ -41,9 +45,6 @@ export default function UploadContent() {
 
   // API Base URL from environment variables
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  // State to hold user details
-  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch user details from backend based on user.id
   const fetchUserDetails = useCallback(async () => {
@@ -54,9 +55,8 @@ export default function UploadContent() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`, // Include token if required
         },
-        // If using session-based auth, include credentials
-        // credentials: "include",
       });
 
       if (!response.ok) {
@@ -70,7 +70,7 @@ export default function UploadContent() {
       console.error("Error fetching user details:", error);
       setError("Error fetching user details.");
     }
-  }, [API_BASE_URL, user?.id]);
+  }, [API_BASE_URL, user]);
 
   // Fetch user details on component mount or when user.id changes
   useEffect(() => {
@@ -189,6 +189,11 @@ export default function UploadContent() {
 
   // Handle creating a new library
   const handleCreateLibrary = useCallback(async () => {
+    if (!user) {
+      setError("User not authenticated.");
+      return;
+    }
+
     if (!newLibraryName.trim()) {
       setError("Please enter a library name.");
       return;
@@ -199,11 +204,10 @@ export default function UploadContent() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`, // Include token if required
         },
-        // If using session-based auth, include credentials
-        // credentials: "include",
         body: JSON.stringify({
-          user_id: user.id, // Include user_id
+          user_id: user.id, // Safe now
           name: newLibraryName.trim(),
         }),
       });
@@ -215,9 +219,7 @@ export default function UploadContent() {
 
       const data = await response.json();
 
-      // **Key Correction:** Use 'data.library' instead of 'data.collection'
       if (data.library) {
-        // Update currentUser's libraries
         setCurrentUser((prevUser) => ({
           ...prevUser,
           libraries: [...(prevUser.libraries || []), data.library],
@@ -230,16 +232,24 @@ export default function UploadContent() {
       setNewLibraryName("");
       setIsCreatingLibrary(false);
       setSuccessMessage("Library created successfully!");
+
+      // Optionally, redirect to the library page
+      // router.push(`/libraries/${data.library._id}`);
     } catch (err) {
       console.error("Create Library Error:", err);
       setError(err.message);
     }
-  }, [newLibraryName, API_BASE_URL, user.id]);
+  }, [newLibraryName, API_BASE_URL, user]);
 
   // Handle form submission
   const handleUpload = useCallback(
     async (e) => {
       e.preventDefault();
+
+      if (!user) {
+        setError("User not authenticated.");
+        return;
+      }
 
       // Basic validation
       if (!file) {
@@ -289,8 +299,9 @@ export default function UploadContent() {
         const uploadResponse = await fetch(`${API_BASE_URL}/upload_azure`, {
           method: "POST",
           body: formData,
-          // If using session-based auth, include credentials
-          // credentials: "include",
+          headers: {
+            Authorization: `Bearer ${user.token}`, // Include token if required
+          },
         });
 
         if (!uploadResponse.ok) {
@@ -318,8 +329,9 @@ export default function UploadContent() {
             {
               method: "POST",
               body: thumbnailFormData,
-              // If using session-based auth, include credentials
-              // credentials: "include",
+              headers: {
+                Authorization: `Bearer ${user.token}`, // Include token if required
+              },
             }
           );
 
@@ -339,14 +351,14 @@ export default function UploadContent() {
 
         // 3. Create content data with the file and thumbnail URLs
         const contentData = {
-          user_id: user.id, // Include user_id
+          user_id: user.id, // Safe now
           title: title.trim(),
           about: about.trim(), // Include the 'about' field
           type: contentType,
           url: fileUrl,
           thumbnail: thumbnailUrl, // Ensure thumbnail is set
           tags: tags,
-          library: selectedLibrary || null, // **Changed from 'collection' to 'library'**
+          library: selectedLibrary || null, // 'library' now
           price: priceType === "paid" ? parseFloat(price) : 0, // Include price
           priceType: priceType, // Include priceType
         };
@@ -355,9 +367,8 @@ export default function UploadContent() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${user.token}`, // Include token if required
           },
-          // If using session-based auth, include credentials
-          // credentials: "include",
           body: JSON.stringify(contentData),
         });
 
@@ -372,6 +383,9 @@ export default function UploadContent() {
         console.log("Content created:", createdContent);
 
         setSuccessMessage("Content uploaded and stored successfully!");
+
+        // Optionally, redirect to the content page
+        router.push(`/content/${createdContent.id}`);
 
         // Reset form
         handleRemoveFile();
@@ -402,7 +416,8 @@ export default function UploadContent() {
       handleRemoveFile,
       handleRemoveThumbnail,
       API_BASE_URL,
-      user.id, // Ensure user.id is included
+      user,
+      router, // Include router in dependencies
     ]
   );
 
@@ -487,6 +502,28 @@ export default function UploadContent() {
       </div>
     );
   }, [thumbnailPreviewSrc, handleRemoveThumbnail]);
+
+  // Prevent rendering the form until user details are loaded
+  if (userLoading || (user && !currentUser)) {
+    return (
+      <SidebarLayout>
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 md:py-10">
+          <p>Loading...</p>
+        </div>
+      </SidebarLayout>
+    );
+  }
+
+  // If user is not authenticated
+  if (!user) {
+    return (
+      <SidebarLayout>
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 md:py-10">
+          <p className="text-red-500">You must be logged in to upload content.</p>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>

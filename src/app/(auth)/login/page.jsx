@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // Import our user context hook
-import { useUser } from "../../../contexts/userContext";
+import { useUser } from "../../../contexts/UserContext";
 
 export default function Login() {
   const router = useRouter();

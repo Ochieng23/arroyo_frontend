@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SidebarLayout from "@/components/CreatorDashboardLayout";
-import { useUser } from "@/contexts/userContext";
+import { useUser } from "@/contexts/UserContext";
 import { FaFacebookF, FaTwitter, FaYoutube, FaSpotify, FaInstagram } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 
@@ -225,7 +225,7 @@ export default function Dashboard() {
         <div className="relative mt-[-40px] flex flex-col items-center">
           <div className="relative h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-white">
             <Image
-              src={user.profileImage}
+              src={user?.profileImage}
               alt="Profile"
               fill
               style={{ objectFit: "cover" }}

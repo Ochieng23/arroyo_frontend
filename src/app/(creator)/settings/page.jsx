@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import SidebarLayout from "@/components/CreatorDashboardLayout";
-import { useUser } from "@/contexts/userContext";
+import { useUser } from "@/contexts/UserContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image"; // Import Next.js Image component for optimized images
 
