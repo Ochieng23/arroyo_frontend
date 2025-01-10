@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation"; // or "next/router" if using Pages Router
 import Image from "next/image";
 import Link from "next/link";
-import { useUser } from "../../../contexts/UserContext";
+import { useUser } from "@/context/userContext";
 // Import our user context hook
 
 export default function Login() {

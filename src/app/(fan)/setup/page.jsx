@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/context/userContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image"; 
 import UserSidebarLayout from "@/components/FanDashboardLayout";// Import Next.js Image component for optimized images

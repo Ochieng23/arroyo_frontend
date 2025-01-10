@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SidebarLayout from "@/components/CreatorDashboardLayout";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/context/userContext";
 import { FaFacebookF, FaTwitter, FaYoutube, FaSpotify, FaInstagram } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 import CreateCollectionModal from "@/components/CreateCollectionModal";

@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import UserSidebarLayout from "@/components/FanDashboardLayout";
+import { useUser } from "@/context/userContext";
 
 export default function CreatorProfilePage() {
   const { id } = useParams();

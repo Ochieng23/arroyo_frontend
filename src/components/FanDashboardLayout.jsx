@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/context/userContext";
 
 import {
   FiHome,

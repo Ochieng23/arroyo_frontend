@@ -14,7 +14,7 @@ import {
 } from "react-icons/ai";
 
 import { useRouter } from "next/navigation"; // Correct import
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/context/userContext";
 
 export default function UploadContent() {
   const router = useRouter(); // Initialize useRouter

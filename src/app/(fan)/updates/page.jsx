@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from "react";
 import UserSidebarLayout from "@/components/FanDashboardLayout";
 import Image from "next/image";
-import { useUser } from "@/contexts/UserContext";
+import { useUser } from "@/context/userContext";
 import axios from "axios";
 import { FiDollarSign, FiUpload } from "react-icons/fi"; // Icons for notification types
 
