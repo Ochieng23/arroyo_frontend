@@ -1,170 +1,214 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import UserSidebarLayout from '@/components/FanDashboardLayout';
-const recentlyViewed = [
-  {
-    name: 'Coffeezilla',
-    category: 'Investigative Journalism',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_5_uiacii.png',
-  },
-];
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import UserSidebarLayout from "@/components/FanDashboardLayout";
 
-const creatorsForYou = [
-  {
-    name: 'Beau of The Fifth Column',
-    category: 'Social Commentary',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_6_mb4eot.png',
-  },
-  {
-    name: 'The China Show',
-    category: 'Current Events',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_7_gv9djd.png',
-  },
-  {
-    name: 'Jim Browning',
-    category: 'Tech Scams',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068179/Rectangle_5164_1_vabvbr.png',
-  },
-];
-
-const popularThisWeek = [
-  {
-    name: 'MarkE Miller',
-    category: 'Exclusive Content',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068178/Rectangle_5164_2_sk7pjx.png',
-  },
-  {
-    name: 'Doriana Gray Games',
-    category: 'Interactive Fiction',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_5_uiacii.png',
-  },
-];
-
-const newOnAroyyo = [
-  {
-    name: 'Grim Fairy',
-    category: 'Fantasy Art',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_6_mb4eot.png',
-  },
-  {
-    name: 'Drich’s Demesne',
-    category: 'Fanfiction',
-    image: 'https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068181/Rectangle_5164_7_gv9djd.png',
-  },
-];
-
+// Static list of topics
 const exploreTopics = [
-  'Podcasts & Shows',
-  'Tabletop Games',
-  'Music',
-  'Writing',
-  'Apps & Software',
-  'Visual Arts',
-  'Video Games',
-  'Lifestyle',
-  'Handicrafts',
-  'Social Impact',
+  "Podcasts & Shows",
+  "Tabletop Games",
+  "Music",
+  "Writing",
+  "Apps & Software",
+  "Visual Arts",
+  "Video Games",
+  "Lifestyle",
+  "Handicrafts",
+  "Social Impact",
 ];
 
-function FanDashboard() {
+export default function FanDashboard() {
+  const router = useRouter();
+
+  // State for each category of creators
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [creatorsForYou, setCreatorsForYou] = useState([]);
+  const [popularThisWeek, setPopularThisWeek] = useState([]);
+  const [newOnAroyyo, setNewOnAroyyo] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all users, then filter + sort client-side
+  const fetchAllUsers = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/users"); // get all users
+      const allUsers = await res.json();
+
+      // 1) Filter to only "creator" roles
+      const creators = allUsers.filter((u) => u.role === "creator");
+
+      // 2) Recently Viewed: ONLY 2, sorted by `creatorView?.viewedAt` DESC
+      const recentlyViewedArr = creators
+        .filter((c) => c.creatorView?.viewedAt) // must have a viewedAt
+        .sort(
+          (a, b) =>
+            new Date(b.creatorView.viewedAt) - new Date(a.creatorView.viewedAt)
+        )
+        .slice(0, 2);
+
+      // 3) Creators For You (example: random 5)
+      const creatorsForYouArr = [...creators]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 5);
+
+      // 4) Popular This Week (top 5 by `creator.profileViews` desc)
+      const popularArr = creators
+        .filter((c) => c.creator) // has a creator doc
+        .sort(
+          (a, b) =>
+            (b.creator?.profileViews || 0) - (a.creator?.profileViews || 0)
+        )
+        .slice(0, 5);
+
+      // 5) New on Aroyyo (top 5 by `createdAt` desc)
+      const newOnAroyyoArr = [...creators]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+
+      // Update state
+      setRecentlyViewed(recentlyViewedArr);
+      setCreatorsForYou(creatorsForYouArr);
+      setPopularThisWeek(popularArr);
+      setNewOnAroyyo(newOnAroyyoArr);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllUsers();
+  }, []);
+
+  // Navigate to /explore/creator/[id] on card click
+  const handleCardClick = (creatorId) => {
+    router.push(`explore/creator/${creatorId}`);
+  };
+
+  if (loading) {
+    return (
+      <UserSidebarLayout className="p-6">
+        <div className="text-center">Loading creators...</div>
+      </UserSidebarLayout>
+    );
+  }
+
+  // Helper component for consistent card rendering
+  const CreatorCard = ({ creator }) => {
+    return (
+      <div
+        className="cursor-pointer rounded-lg bg-white p-4 shadow-md transition hover:shadow-lg"
+        onClick={() => handleCardClick(creator._id)}
+      >
+        {/* Wrapper for uniform 200x200 images */}
+        <div className="relative h-[200px] w-[200px] mx-auto">
+          <Image
+            fill
+            src={
+              creator.profileImage ||
+              "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png"
+            }
+            alt={creator.email || "Creator image"}
+            className="rounded-lg object-cover"
+          />
+        </div>
+
+        <h3 className="mt-2 text-lg font-semibold">
+          {creator.firstName || "No name"} {creator.lastName}
+        </h3>
+        <p className="text-sm text-gray-500">{creator.niche || "No niche"}</p>
+
+        {/* If this is recentlyViewed */}
+        {creator.creatorView?.viewedAt && (
+          <p className="mt-1 text-xs text-gray-400">
+            Last viewed: {new Date(creator.creatorView.viewedAt).toLocaleString()}
+          </p>
+        )}
+
+        {/* If this is in the popular section */}
+        {creator.creator?.profileViews !== undefined && (
+          <p className="text-sm text-gray-500">
+            Views: {creator.creator?.profileViews || 0}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <UserSidebarLayout className="p-6">
       {/* Hero Section */}
-      <section className="bg-purple-600 text-white rounded-lg p-8 mb-8 text-center">
+      <section className="mb-8 rounded-lg bg-purple-600 p-8 text-center text-white">
         <h1 className="text-3xl font-bold">Welcome Back to Aroyyo</h1>
-        <p className="text-lg mt-2">Discover and support creators you love!</p>
+        <p className="mt-2 text-lg">Discover and support creators you love!</p>
       </section>
 
-      {/* Recently Viewed Section */}
+      {/* Recently Viewed (LAST 2) */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Recently Viewed</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {recentlyViewed.map((creator, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-4">
-              <Image
-                src={creator.image}
-                alt={creator.name}
-                width={200}
-                height={200}
-                className="rounded-lg object-cover"
-              />
-              <h3 className="text-lg font-semibold mt-2">{creator.name}</h3>
-              <p className="text-sm text-gray-500">{creator.category}</p>
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 text-2xl font-semibold">Recently Viewed</h2>
+        {recentlyViewed.length === 0 ? (
+          <p className="text-gray-500">No recently viewed creators yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {recentlyViewed.map((creator) => (
+              <CreatorCard key={creator._id} creator={creator} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Creators For You Section */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Creators For You</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {creatorsForYou.map((creator, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-4">
-              <Image
-                src={creator.image}
-                alt={creator.name}
-                width={200}
-                height={200}
-                className="rounded-lg object-cover"
-              />
-              <h3 className="text-lg font-semibold mt-2">{creator.name}</h3>
-              <p className="text-sm text-gray-500">{creator.category}</p>
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 text-2xl font-semibold">Creators For You</h2>
+        {creatorsForYou.length === 0 ? (
+          <p className="text-gray-500">No recommendations found.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {creatorsForYou.map((creator) => (
+              <CreatorCard key={creator._id} creator={creator} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Popular This Week Section */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Popular This Week</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {popularThisWeek.map((creator, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-4">
-              <Image
-                src={creator.image}
-                alt={creator.name}
-                width={200}
-                height={200}
-                className="rounded-lg object-cover"
-              />
-              <h3 className="text-lg font-semibold mt-2">{creator.name}</h3>
-              <p className="text-sm text-gray-500">{creator.category}</p>
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 text-2xl font-semibold">Popular This Week</h2>
+        {popularThisWeek.length === 0 ? (
+          <p className="text-gray-500">No popular creators this week.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {popularThisWeek.map((creator) => (
+              <CreatorCard key={creator._id} creator={creator} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* New on Aroyyo Section */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">New on Aroyyo</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {newOnAroyyo.map((creator, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md hover:shadow-lg transition p-4">
-              <Image
-                src={creator.image}
-                alt={creator.name}
-                width={200}
-                height={200}
-                className="rounded-lg object-cover"
-              />
-              <h3 className="text-lg font-semibold mt-2">{creator.name}</h3>
-              <p className="text-sm text-gray-500">{creator.category}</p>
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 text-2xl font-semibold">New on Aroyyo</h2>
+        {newOnAroyyo.length === 0 ? (
+          <p className="text-gray-500">No new creators at the moment.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {newOnAroyyo.map((creator) => (
+              <CreatorCard key={creator._id} creator={creator} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Explore Topics Section */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Explore Topics</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <h2 className="mb-4 text-2xl font-semibold">Explore Topics</h2>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {exploreTopics.map((topic, index) => (
             <button
               key={index}
-              className="px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+              className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
             >
               {topic}
             </button>
@@ -173,14 +217,12 @@ function FanDashboard() {
       </section>
 
       {/* Footer Section */}
-      <footer className="text-center mt-12">
-        <h2 className="text-xl font-semibold mb-4">Ready to Explore More?</h2>
-        <button className="bg-purple-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-purple-700 transition">
+      <footer className="mt-12 text-center">
+        <h2 className="mb-4 text-xl font-semibold">Ready to Explore More?</h2>
+        <button className="rounded-full bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700">
           Discover Now
         </button>
       </footer>
     </UserSidebarLayout>
   );
 }
-
-export default FanDashboard;

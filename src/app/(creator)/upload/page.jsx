@@ -12,8 +12,9 @@ import {
   AiOutlineFileVideo,
   AiOutlineFileUnknown,
 } from "react-icons/ai";
-import { useUser } from "@/contexts/UserContext";
+
 import { useRouter } from "next/navigation"; // Correct import
+import { useUser } from "@/contexts/UserContext";
 
 export default function UploadContent() {
   const router = useRouter(); // Initialize useRouter

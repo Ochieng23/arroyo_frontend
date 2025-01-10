@@ -1,4 +1,3 @@
-// app/dashboard/page.js
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -8,44 +7,24 @@ import SidebarLayout from "@/components/CreatorDashboardLayout";
 import { useUser } from "@/contexts/UserContext";
 import { FaFacebookF, FaTwitter, FaYoutube, FaSpotify, FaInstagram } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
+import CreateCollectionModal from "@/components/CreateCollectionModal";
+import CreateTierModal from "@/components/CreateTierModal";
 
 // Tabs for the creator dashboard
 const tabs = ["Home", "Collections", "Membership", "About"];
-
-// Sample posts (can be dynamic)
-const posts = [
-  {
-    id: 1,
-    title: "Behind the scenes - Echoes and Silence",
-    image:
-      "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737804/image_5_bpt5xs.png",
-    price: "Ksh.640.00",
-    views: 654,
-    time: "23:45",
-    daysAgo: "2 Days ago",
-  },
-  {
-    id: 2,
-    title: "Soul Unveiled: The Journey of Rhythm and Roots",
-    image:
-      "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737797/image_4_ofyvtg.png",
-    price: "Ksh.20,000",
-    views: 234,
-    time: "23:45",
-    daysAgo: "3 Days ago",
-  },
-];
-
-// Example membership count
-const totalMembers = 1247;
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("Home");
   const router = useRouter();
 
-  // This 'user' comes from context after login
+  // User context
   const { user, setUser, loading } = useUser();
   console.log("Context user:", user);
+
+  // State for Membership Tiers
+  const [membershipTiers, setMembershipTiers] = useState([]);
+  const [showCreateCollectionModal, setShowCreateCollectionModal] = useState(false);
+  const [showCreateTierModal, setShowCreateTierModal] = useState(false);
 
   // Fetch user details from backend if we have user.id
   const fetchUserDetails = () => {
@@ -62,8 +41,19 @@ export default function Dashboard() {
       });
   };
 
+  // Function to fetch membership tiers
+  const fetchMembershipTiers = () => {
+    if (!user?.creator?._id) {
+      console.error("Creator ID not found in user payload");
+      return;
+    }
+
+    setMembershipTiers(user.creator.subscriptionTiers || []);
+  };
+
   useEffect(() => {
     fetchUserDetails();
+    fetchMembershipTiers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -78,36 +68,41 @@ export default function Dashboard() {
       case "Home":
         return (
           <div className="fade-in min-h-[300px]">
-            <h3 className="mb-4 text-xl font-bold text-gray-800">Recent posts</h3>
+            <h3 className="mb-4 text-xl font-bold text-gray-800">Recent Posts</h3>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="flex flex-col rounded-lg bg-white p-4 shadow"
-                >
-                  <div className="relative h-48 w-full overflow-hidden rounded-md">
-                    <Image
-                      src={post.image}
-                      alt={post.title}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
-                    <div className="absolute left-2 top-2 rounded-full bg-white/80 px-2 py-0.5 text-xs">
-                      {post.daysAgo}
+              {user?.contents?.length > 0 ? (
+                user.contents.slice(-2).reverse().map((post) => (
+                  <div
+                    key={post._id}
+                    className="flex flex-col rounded-lg bg-white p-4 shadow"
+                  >
+                    <div className="relative h-48 w-full overflow-hidden rounded-md">
+                      <Image
+                        src={post.thumbnail || "https://via.placeholder.com/150"}
+                        alt={post.title}
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                      <div className="absolute left-2 top-2 rounded-full bg-white/80 px-2 py-0.5 text-xs">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </div>
+                      <div className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-xs text-white">
+                        {post.type.toUpperCase()}
+                      </div>
                     </div>
-                    <div className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-xs text-white">
-                      {post.time}
+                    <div className="mt-3 flex-grow">
+                      <h4 className="font-semibold text-gray-800">{post.title}</h4>
+                      <p className="mt-1 text-sm text-gray-600">{post.about}</p>
+                      <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+                        <span>Ksh.{post.price}</span>
+                        <span>{post.viewCount} views</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex-grow">
-                    <h4 className="font-semibold text-gray-800">{post.title}</h4>
-                    <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
-                      <span>{post.price}</span>
-                      <span>{post.views} views</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500">You have no posts yet. Start creating!</p>
+              )}
             </div>
           </div>
         );
@@ -119,70 +114,102 @@ export default function Dashboard() {
             <p className="mb-4 text-gray-600">
               Group your content by themes, series, or categories.
             </p>
-            <div className="rounded-md bg-white p-4 shadow">
-              <p className="text-gray-500">You have no collections yet.</p>
-              <button className="mt-3 rounded-md bg-purple-600 px-3 py-2 text-white hover:bg-purple-700">
-                + Create your first collection
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-semibold text-gray-700">Collections</h4>
+              <button
+                onClick={() => setShowCreateCollectionModal(true)}
+                className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition"
+              >
+                + Create Collection
               </button>
             </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {user?.libraries.length > 0 ? (
+                user.libraries.map((collection) => (
+                  <div
+                    key={collection._id}
+                    className="flex flex-col rounded-lg bg-white p-4 shadow"
+                  >
+                    <div className="relative h-32 w-full overflow-hidden rounded-md">
+                      <Image
+                        src={collection.thumbnail || " https://res.cloudinary.com/dhz4c0oae/image/upload/v1736068101/Rectangle_5164_lonk9x.png"}
+                        alt={collection.name}
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                    <div className="mt-3 flex-grow">
+                      <h4 className="font-semibold text-gray-800">{collection.name}</h4>
+                      <p className="mt-1 text-sm text-gray-600">{collection.description || "No description provided."}</p>
+                      <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
+                        <span>{collection.content.length} items</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">You have no collections yet. Start creating one!</p>
+              )}
+            </div>
+            {/* Create Collection Modal */}
+            {showCreateCollectionModal && (
+              <CreateCollectionModal 
+                onClose={() => setShowCreateCollectionModal(false)} 
+                onSuccess={fetchUserDetails} 
+              />
+            )}
           </div>
         );
 
+      // Inside renderTabContent() for "Membership"
       case "Membership":
         return (
           <div className="fade-in min-h-[300px]">
             <h3 className="mb-3 text-xl font-bold text-gray-800">Memberships</h3>
             <p className="mb-4 text-gray-600">
-              You currently have{" "}
-              <span className="font-semibold text-purple-700">
-                {totalMembers} active members
-              </span>
-              .
+              Create and manage your membership tiers to offer exclusive content.
             </p>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-md bg-white p-4 shadow">
-                <h4 className="text-base font-semibold text-gray-800">
-                  Bronze Fan
-                </h4>
-                <p className="text-xs text-gray-500">Ksh.200 / month</p>
-                <div className="mt-2 text-sm text-gray-700">
-                  Access to exclusive posts
-                </div>
-              </div>
-              <div className="rounded-md bg-white p-4 shadow">
-                <h4 className="text-base font-semibold text-gray-800">
-                  Silver Star
-                </h4>
-                <p className="text-xs text-gray-500">Ksh.500 / month</p>
-                <div className="mt-2 text-sm text-gray-700">
-                  Includes behind-the-scenes + Q&A
-                </div>
-              </div>
-              <div className="rounded-md bg-white p-4 shadow">
-                <h4 className="text-base font-semibold text-gray-800">
-                  Gold VIP
-                </h4>
-                <p className="text-xs text-gray-500">Ksh.1,000 / month</p>
-                <div className="mt-2 text-sm text-gray-700">
-                  Early access + direct fan chats
-                </div>
-              </div>
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-semibold text-gray-700">Your Membership Tiers</h4>
+              <button
+                onClick={() => setShowCreateTierModal(true)}
+                className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition"
+              >
+                + Create Tier
+              </button>
             </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              {membershipTiers?.length > 0 ? (
+                membershipTiers.map((tier) => (
+                  <div
+                    key={tier._id}
+                    className="flex flex-col rounded-lg bg-white p-4 shadow"
+                  >
+                    <h4 className="text-base font-semibold text-gray-800">{tier.name}</h4>
+                    <p className="text-xs text-gray-500">Ksh.{tier.price} / month</p>
+                    <div className="mt-2 text-sm text-gray-700">{tier.description}</div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">You have no membership tiers yet. Start creating one!</p>
+              )}
+            </div>
+            {showCreateTierModal && (
+              <CreateTierModal
+                creatorId={user?.creator?._id}
+                onClose={() => setShowCreateTierModal(false)}
+                onSuccess={fetchMembershipTiers}
+              />
+            )}
           </div>
         );
 
       case "About":
         return (
           <div className="fade-in min-h-[300px]">
-            <h3 className="mb-3 text-xl font-bold text-gray-800">About Malik Kwezi</h3>
+            <h3 className="mb-3 text-xl font-bold text-gray-800">About {user?.firstName} {user?.lastName}</h3>
             <p className="leading-relaxed">
-              Malik Kwezi is a passionate musician from Kenya, known for
-              blending African rhythms with contemporary sounds. With a
-              growing global fan base, Malik’s vision is to spread joy,
-              empowerment, and unity through his artistry. From soulful
-              ballads to electric live performances, Malik continues to
-              push boundaries, making every heartbeat resonate with the
-              power of music.
+              {user?.about || "You haven't added an about section yet."}
             </p>
             {/* Display Niche */}
             {user?.niche && (
@@ -208,7 +235,7 @@ export default function Dashboard() {
         {/* Banner Image from user context or dummy fallback */}
         <div className="relative h-[240px] w-full overflow-hidden rounded-xl">
           <Image
-            src={user?.bannerImage}
+            src={bannerSrc}
             alt="Banner"
             fill
             style={{ objectFit: "cover" }}
@@ -225,7 +252,7 @@ export default function Dashboard() {
         <div className="relative mt-[-40px] flex flex-col items-center">
           <div className="relative h-[120px] w-[120px] overflow-hidden rounded-full border-4 border-white">
             <Image
-              src={user?.profileImage}
+              src={profileSrc}
               alt="Profile"
               fill
               style={{ objectFit: "cover" }}
@@ -257,17 +284,82 @@ export default function Dashboard() {
 
           {/* Social Icons */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {user?.socialLinks?.map((social, i) => (
-              <a
-                key={i}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 transition-opacity hover:opacity-80"
-              >
-                {social.icon}
-              </a>
-            ))}
+            {user?.social && (
+              <>
+                {user.social.facebook && (
+                  <a
+                    href={user.social.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    <FaFacebookF />
+                  </a>
+                )}
+                {user.social.x && (
+                  <a
+                    href={user.social.x}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    {/* Assuming 'x' refers to Twitter */}
+                    <FaTwitter />
+                  </a>
+                )}
+                {user.social.youtube && (
+                  <a
+                    href={user.social.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    <FaYoutube />
+                  </a>
+                )}
+                {user.social.spotify && (
+                  <a
+                    href={user.social.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    <FaSpotify />
+                  </a>
+                )}
+                {user.social.instagram && (
+                  <a
+                    href={user.social.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    <FaInstagram />
+                  </a>
+                )}
+                {user.social.tiktok && (
+                  <a
+                    href={user.social.tiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    <SiTiktok />
+                  </a>
+                )}
+                {user.social.pinterest && (
+                  <a
+                    href={user.social.pinterest}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 transition-opacity hover:opacity-80"
+                  >
+                    {/* Replace with Pinterest Icon */}
+                    <span>P</span>
+                  </a>
+                )}
+              </>
+            )}
           </div>
 
           {/* Tabs */}
