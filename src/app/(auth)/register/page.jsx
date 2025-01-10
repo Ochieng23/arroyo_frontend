@@ -72,7 +72,14 @@ export default function SignUp() {
             <Image
               src="https://res.cloudinary.com/dhz4c0oae/image/upload/v1733474194/Frame_2085663663_i0cui1.png"
               alt="Loreax Logo"
-              width={120}
+              
+
+
+
+
+
+
+              
               height={40}
             />
           </Link>

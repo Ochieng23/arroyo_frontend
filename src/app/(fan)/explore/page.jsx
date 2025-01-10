@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import UserSidebarLayout from "@/components/fanDashboardLayout";
+import UserSidebarLayout from "@/components/FanDashboardLayout";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -25,8 +25,8 @@ const niches = [
 export default function Explore() {
   const router = useRouter();
 
-  const [allCreators, setAllCreators] = useState([]);   
-  const [filteredCreators, setFilteredCreators] = useState([]); 
+  const [allCreators, setAllCreators] = useState([]);
+  const [filteredCreators, setFilteredCreators] = useState([]);
   const [selectedNiche, setSelectedNiche] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -36,7 +36,7 @@ export default function Explore() {
       const res = await fetch("http://localhost:8000/users?role=creator");
       const data = await res.json();
       setAllCreators(data);
-      setFilteredCreators(data); 
+      setFilteredCreators(data);
     } catch (error) {
       console.error("Error fetching creators:", error);
     }

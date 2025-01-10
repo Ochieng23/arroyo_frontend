@@ -13,7 +13,7 @@ export default function CreatorProfilePage() {
   const [normalizedContents, setNormalizedContents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+
   // State to manage user subscription
   const [userSubscription, setUserSubscription] = useState(null); // null or subscription tier
   const [isSubscribing, setIsSubscribing] = useState(false); // To handle subscription loading state
@@ -420,80 +420,84 @@ export default function CreatorProfilePage() {
 
         {/* SUBSCRIPTIONS TAB: Show subscription tiers and allow subscribing */}
         {/* SUBSCRIPTIONS TAB: Show subscription tiers and allow subscribing */}
-{activeTab === "subscriptions" && (
-  <div>
-    <h2 className="text-2xl font-bold mb-4">Subscriptions</h2>
-    {creator?.subscriptionTiers?.length ? (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {creator?.subscriptionTiers.map((tier) => {
-          const isCurrentTier =
-            userSubscription && userSubscription.id === tier._id;
+        {activeTab === "subscriptions" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Subscriptions</h2>
+            {creator?.subscriptionTiers?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {creator?.subscriptionTiers.map((tier) => {
+                  const isCurrentTier =
+                    userSubscription && userSubscription.id === tier._id;
 
-          return (
-            <div
-              key={tier._id}
-              className={`border rounded-lg p-6 flex flex-col ${
-                isCurrentTier ? "border-blue-500" : "border-gray-300"
-              }`}
-            >
-              <h3 className="text-xl font-semibold mb-2">{tier.name}</h3>
-              <p className="text-gray-600 mb-4">{tier.description}</p>
-              <p className="text-2xl font-bold mb-4">
-                KES {tier.price} / month
+                  return (
+                    <div
+                      key={tier._id}
+                      className={`border rounded-lg p-6 flex flex-col ${
+                        isCurrentTier ? "border-blue-500" : "border-gray-300"
+                      }`}
+                    >
+                      <h3 className="text-xl font-semibold mb-2">
+                        {tier.name}
+                      </h3>
+                      <p className="text-gray-600 mb-4">{tier.description}</p>
+                      <p className="text-2xl font-bold mb-4">
+                        KES {tier.price} / month
+                      </p>
+                      {isCurrentTier ? (
+                        <button
+                          className="mt-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded"
+                          onClick={() => {
+                            // TODO: Implement unsubscribe logic
+                            alert(
+                              "Unsubscribe functionality to be implemented."
+                            );
+                          }}
+                        >
+                          Unsubscribe
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleSubscribe(tier)}
+                          className="mt-auto bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
+                          disabled={isSubscribing === tier._id}
+                        >
+                          {isSubscribing === tier._id
+                            ? "Processing..."
+                            : `Subscribe to ${tier.name}`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>No subscription tiers available for this creator.</p>
+            )}
+          </div>
+        )}
+
+        {/* ABOUT TAB: Show about info, plus contact details */}
+        {activeTab === "about" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">About</h2>
+            <p>{about || "No bio available for this creator."}</p>
+            {email && (
+              <p className="text-gray-700 mt-2">
+                <strong>Email:</strong> {email}
               </p>
-              {isCurrentTier ? (
-                <button
-                  className="mt-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded"
-                  onClick={() => {
-                    // TODO: Implement unsubscribe logic
-                    alert("Unsubscribe functionality to be implemented.");
-                  }}
-                >
-                  Unsubscribe
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleSubscribe(tier)}
-                  className="mt-auto bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
-                  disabled={isSubscribing === tier._id}
-                >
-                  {isSubscribing === tier._id
-                    ? "Processing..."
-                    : `Subscribe to ${tier.name}`}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    ) : (
-      <p>No subscription tiers available for this creator.</p>
-    )}
-  </div>
-)}
-
-{/* ABOUT TAB: Show about info, plus contact details */}
-{activeTab === "about" && (
-  <div>
-    <h2 className="text-2xl font-bold mb-4">About</h2>
-    <p>{about || "No bio available for this creator."}</p>
-    {email && (
-      <p className="text-gray-700 mt-2">
-        <strong>Email:</strong> {email}
-      </p>
-    )}
-    {phoneNumber && (
-      <p className="text-gray-700">
-        <strong>Phone:</strong> {phoneNumber}
-      </p>
-    )}
-    {address && (
-      <p className="text-gray-700">
-        <strong>Address:</strong> {address}
-      </p>
-    )}
-  </div>
-)}
+            )}
+            {phoneNumber && (
+              <p className="text-gray-700">
+                <strong>Phone:</strong> {phoneNumber}
+              </p>
+            )}
+            {address && (
+              <p className="text-gray-700">
+                <strong>Address:</strong> {address}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* COLLECTIONS TAB: Show the creator’s libraries */}
         {activeTab === "collections" && (
