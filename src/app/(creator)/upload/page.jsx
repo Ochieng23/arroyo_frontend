@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import SidebarLayout from "@/components/CreatorDashboardLayout"; // Ensure correct casing
 import {
   AiOutlineLoading3Quarters,
@@ -9,9 +15,10 @@ import {
   AiOutlineFileWord,
   AiOutlineFileExcel,
   AiOutlineFileImage,
-  AiOutlineFileVideo,
   AiOutlineFileUnknown,
 } from "react-icons/ai";
+
+import { FaVideo } from "react-icons/fa";
 
 import { useRouter } from "next/navigation"; // Correct import
 import { useUser } from "@/context/userContext";
@@ -95,7 +102,7 @@ export default function UploadContent() {
     if (mimeType.startsWith("image/"))
       return <AiOutlineFileImage size={40} className="text-yellow-600" />;
     if (mimeType.startsWith("video/"))
-      return <AiOutlineFileVideo size={40} className="text-purple-600" />;
+      return <FaVideo size={40} className="text-purple-600" />;
     return <AiOutlineFileUnknown size={40} className="text-gray-600" />;
   }, []);
 
@@ -307,7 +314,9 @@ export default function UploadContent() {
 
         if (!uploadResponse.ok) {
           const errorData = await uploadResponse.json();
-          throw new Error(errorData.message || "Failed to upload file to Azure.");
+          throw new Error(
+            errorData.message || "Failed to upload file to Azure."
+          );
         }
 
         const uploadData = await uploadResponse.json();
@@ -520,7 +529,9 @@ export default function UploadContent() {
     return (
       <SidebarLayout>
         <div className="mx-auto w-full max-w-6xl px-4 py-6 md:py-10">
-          <p className="text-red-500">You must be logged in to upload content.</p>
+          <p className="text-red-500">
+            You must be logged in to upload content.
+          </p>
         </div>
       </SidebarLayout>
     );
@@ -530,7 +541,9 @@ export default function UploadContent() {
     <SidebarLayout>
       <div className="mx-auto w-full max-w-6xl px-4 py-6 md:py-10">
         {/* Page Title */}
-        <h1 className="mb-6 text-2xl font-bold text-gray-700">Upload Your Content</h1>
+        <h1 className="mb-6 text-2xl font-bold text-gray-700">
+          Upload Your Content
+        </h1>
 
         {/* Display Success or Error Messages */}
         {successMessage && (
@@ -629,13 +642,17 @@ export default function UploadContent() {
               <div className="flex flex-col space-y-4">
                 {/* Main File Preview */}
                 <div className="w-full h-56">
-                  <p className="mb-2 text-sm font-medium text-gray-700">File Preview:</p>
+                  <p className="mb-2 text-sm font-medium text-gray-700">
+                    File Preview:
+                  </p>
                   <div className="w-full h-full bg-gray-100 rounded-md overflow-hidden">
                     {file && previewSrc ? (
                       filePreview
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <p className="text-sm text-gray-400">No file selected</p>
+                        <p className="text-sm text-gray-400">
+                          No file selected
+                        </p>
                       </div>
                     )}
                   </div>
@@ -644,13 +661,17 @@ export default function UploadContent() {
                 {/* Thumbnail Preview */}
                 {contentType !== "image" && (
                   <div className="w-full h-32">
-                    <p className="mb-2 text-sm font-medium text-gray-700">Thumbnail Preview:</p>
+                    <p className="mb-2 text-sm font-medium text-gray-700">
+                      Thumbnail Preview:
+                    </p>
                     <div className="w-full h-full bg-gray-100 rounded-md overflow-hidden">
                       {thumbnailPreviewSrc ? (
                         thumbnailPreview
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <p className="text-sm text-gray-400">No thumbnail selected</p>
+                          <p className="text-sm text-gray-400">
+                            No thumbnail selected
+                          </p>
                         </div>
                       )}
                     </div>
@@ -754,9 +775,12 @@ export default function UploadContent() {
             <div className="space-y-6">
               {/* Libraries Card */}
               <div className="rounded-md border border-gray-200 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-gray-700">Libraries</h3>
+                <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                  Libraries
+                </h3>
                 <p className="mb-4 text-xs text-gray-500">
-                  Helps your fans connect with related content and shared themes.
+                  Helps your fans connect with related content and shared
+                  themes.
                 </p>
                 {/* Select Existing Library */}
                 <select
@@ -819,7 +843,9 @@ export default function UploadContent() {
 
               {/* Tags Card */}
               <div className="rounded-md border border-gray-200 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-gray-700">Tags</h3>
+                <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                  Tags
+                </h3>
                 <p className="mb-3 text-xs text-gray-500">
                   Organize your content by adding relevant tags.
                 </p>
