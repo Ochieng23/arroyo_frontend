@@ -2,7 +2,13 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 
 // Create the UserContext with an initial value
 const UserContext = createContext({
@@ -70,7 +76,9 @@ export function UserProvider({ children }) {
       try {
         const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         if (!apiBaseUrl) {
-          throw new Error("API base URL is not defined in environment variables.");
+          throw new Error(
+            "API base URL is not defined in environment variables."
+          );
         }
 
         const url = `${apiBaseUrl}/users/${user.id}`;
@@ -80,7 +88,9 @@ export function UserProvider({ children }) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Error fetching user details: ${response.status} ${response.statusText} - ${errorText}`);
+          throw new Error(
+            `Error fetching user details: ${response.status} ${response.statusText} - ${errorText}`
+          );
         }
 
         const data = await response.json();
@@ -113,7 +123,9 @@ export function UserProvider({ children }) {
     [user, userDetails, loadingUserDetails, userDetailsError]
   );
 
-  return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
+  );
 }
 
 // Custom hook to use the UserContext

@@ -41,6 +41,9 @@ export default function Dashboard() {
       const response = await fetch(
         `https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/users/${user.id}`
       );
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
       console.log("Fetched user details:", data);
       setUser((prev) => ({ ...prev, ...data }));
@@ -80,11 +83,19 @@ export default function Dashboard() {
   // Render content inside each tab
   const renderTabContent = () => {
     if (loading) {
-      return <p>Loading...</p>;
+      return (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <p>Loading...</p>
+        </div>
+      );
     }
 
     if (!user) {
-      return <p>User data is not available.</p>;
+      return (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <p>User data is not available.</p>
+        </div>
+      );
     }
 
     switch (activeTab) {
@@ -254,7 +265,7 @@ export default function Dashboard() {
       {/* Create Tier Modal */}
       {showCreateTierModal && (
         <CreateTierModal
-          creatorId={user.creator._id}
+          creatorId={user.creator?._id}
           onClose={() => setShowCreateTierModal(false)}
           onSuccess={fetchUserDetails}
         />
@@ -282,10 +293,10 @@ export default function Dashboard() {
 
   // Fallback to dummy banner/profile if user.bannerImage/user.profileImage aren't set
   const bannerSrc =
-    user.bannerImage ||
+    user?.bannerImage ||
     "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737481/image_2_vfed7a.png";
   const profileSrc =
-    user.profileImage ||
+    user?.profileImage ||
     "https://res.cloudinary.com/dhz4c0oae/image/upload/v1735737500/Group_1000004214_jvbs2z.png";
 
   return (
@@ -319,33 +330,35 @@ export default function Dashboard() {
           </div>
 
           <h2 className="mt-3 text-2xl font-bold text-purple-800">
-            {user.firstName} {user.lastName}
+            {user?.firstName} {user?.lastName}
           </h2>
           <p className="mt-1 max-w-md text-center text-sm text-gray-600">
-            {user.about || "Tell us about yourself..."}
+            {user?.about || "Tell us about yourself..."}
           </p>
 
           {/* Occupation + Country */}
           <div className="mt-2 flex items-center gap-1 text-sm text-gray-500">
-            <span>{user.countryFlag || "🌍"}</span>
-            <span>{user.occupation || "Occupation not set"}</span>
+            <span>{user?.countryFlag || "🌍"}</span>
+            <span>{user?.occupation || "Occupation not set"}</span>
           </div>
 
           {/* Link */}
           <div className="mt-1 text-sm text-purple-600">
             <a
-              href={`https://loreax.com/${user.username || "username_not_set"}`}
+              href={`https://loreax.com/${
+                user?.username || "username_not_set"
+              }`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
             >
-              Loreax.com/{user.username || "username_not_set"}
+              Loreax.com/{user?.username || "username_not_set"}
             </a>
           </div>
 
           {/* Social Icons */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {user.social && (
+            {user?.social && (
               <>
                 {user.social.facebook && (
                   <a
@@ -364,6 +377,7 @@ export default function Dashboard() {
                     rel="noopener noreferrer"
                     className="p-2 transition-opacity hover:opacity-80"
                   >
+                    {/* Assuming 'x' refers to Twitter */}
                     <FaTwitter />
                   </a>
                 )}
