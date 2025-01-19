@@ -1,10 +1,10 @@
 // components/CreateCollectionModal.js
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 export default function CreateCollectionModal({ onClose, onSuccess }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState(null); // File
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,20 +20,23 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
 
     // Prepare form data
     const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', description);
+    formData.append("name", name);
+    formData.append("description", description);
     if (thumbnail) {
-      formData.append('thumbnail', thumbnail);
+      formData.append("thumbnail", thumbnail);
     }
 
     try {
-      const response = await fetch('http://localhost:8000/libraries', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`, // Adjust token retrieval as per your auth setup
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/libraries",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // Adjust token retrieval as per your auth setup
+          },
+          body: formData,
+        }
+      );
 
       const data = await response.json();
 
@@ -41,10 +44,10 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
         onSuccess(); // Refresh collections
         onClose();
       } else {
-        setError(data.message || 'Failed to create collection');
+        setError(data.message || "Failed to create collection");
       }
     } catch (err) {
-      setError('An error occurred while creating the collection.');
+      setError("An error occurred while creating the collection.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -58,7 +61,9 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
         {error && <p className="text-red-500 mb-2">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">Collection Name</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Collection Name
+            </label>
             <input
               type="text"
               className="mt-1 w-full border rounded-md px-3 py-2"
@@ -69,7 +74,9 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
             />
           </div>
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Description
+            </label>
             <textarea
               className="mt-1 w-full border rounded-md px-3 py-2"
               value={description}
@@ -78,7 +85,9 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
             ></textarea>
           </div>
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">Thumbnail Image</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Thumbnail Image
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -100,7 +109,7 @@ export default function CreateCollectionModal({ onClose, onSuccess }) {
               className="rounded-md bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create'}
+              {loading ? "Creating..." : "Create"}
             </button>
           </div>
         </form>

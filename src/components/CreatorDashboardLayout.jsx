@@ -25,10 +25,13 @@ const SidebarLayout = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(
+        "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/auth/logout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       if (response.ok) {
         console.log("Logged out successfully");
         router.push("/login");
@@ -51,11 +54,11 @@ const SidebarLayout = ({ children }) => {
       label: "My Dashboard",
     },
     {
-        href: "/upload",
-        // Use HiOutlineSpeakerphone instead of HiOutlineMegaphone
-        icon: <HiOutlineSpeakerphone size={17} />,
-        label: "Upload Content",
-      },
+      href: "/upload",
+      // Use HiOutlineSpeakerphone instead of HiOutlineMegaphone
+      icon: <HiOutlineSpeakerphone size={17} />,
+      label: "Upload Content",
+    },
     // {
     //   href: "/insights",
     //   icon: <FiBarChart2 size={17} />,

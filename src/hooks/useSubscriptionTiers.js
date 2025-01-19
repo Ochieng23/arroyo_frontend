@@ -26,16 +26,21 @@ export default function useSubscriptionTiers(creatorId) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/creators/${creatorId}/subscription-tiers`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Include cookies if authentication is cookie-based
-        });
+        const response = await fetch(
+          `https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/creators/${creatorId}/subscription-tiers`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // Include cookies if authentication is cookie-based
+          }
+        );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch subscription tiers: ${response.statusText}`);
+          throw new Error(
+            `Failed to fetch subscription tiers: ${response.statusText}`
+          );
         }
 
         const data = await response.json();

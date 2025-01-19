@@ -19,12 +19,11 @@ export default function CreateTierModal({ creatorId, onClose, onSuccess }) {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/creators/${creatorId}/tier`,
+        `https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/creators/${creatorId}/tier`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            
           },
           body: JSON.stringify(payload),
         }
@@ -50,7 +49,9 @@ export default function CreateTierModal({ creatorId, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">Create New Membership Tier</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Create New Membership Tier
+        </h2>
         {error && <p className="text-red-500 mb-2">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

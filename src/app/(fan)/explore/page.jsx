@@ -33,7 +33,9 @@ export default function Explore() {
   // 1. Fetch only creator users from backend (?role=creator)
   const fetchCreators = async () => {
     try {
-      const res = await fetch("http://localhost:8000/users?role=creator");
+      const res = await fetch(
+        "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/users?role=creator"
+      );
       const data = await res.json();
       setAllCreators(data);
       setFilteredCreators(data);

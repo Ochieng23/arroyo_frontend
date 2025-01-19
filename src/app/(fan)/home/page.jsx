@@ -32,7 +32,9 @@ export default function FanDashboard() {
   // Fetch all users, then filter + sort client-side
   const fetchAllUsers = async () => {
     try {
-      const res = await fetch("http://localhost:8000/users"); // get all users
+      const res = await fetch(
+        "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/users"
+      ); // get all users
       const allUsers = await res.json();
 
       // 1) Filter to only "creator" roles
@@ -123,7 +125,8 @@ export default function FanDashboard() {
         {/* If this is recentlyViewed */}
         {creator.creatorView?.viewedAt && (
           <p className="mt-1 text-xs text-gray-400">
-            Last viewed: {new Date(creator.creatorView.viewedAt).toLocaleString()}
+            Last viewed:{" "}
+            {new Date(creator.creatorView.viewedAt).toLocaleString()}
           </p>
         )}
 

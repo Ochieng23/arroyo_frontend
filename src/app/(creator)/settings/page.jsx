@@ -81,17 +81,23 @@ export default function SetupAccount() {
           },
         }));
         console.log(
-          `Existing social link found: ${platforms[0]} - ${existingSocial[platforms[0]]}`
+          `Existing social link found: ${platforms[0]} - ${
+            existingSocial[platforms[0]]
+          }`
         );
       }
 
       // Set existing image previews if images are not marked for removal
       if (currentUser.bannerImage && !removeBannerImage) {
-        setBannerImagePreview(`${currentUser.bannerImage}?t=${new Date().getTime()}`);
+        setBannerImagePreview(
+          `${currentUser.bannerImage}?t=${new Date().getTime()}`
+        );
         console.log("Existing banner image set for preview.");
       }
       if (currentUser.profileImage && !removeProfileImage) {
-        setProfileImagePreview(`${currentUser.profileImage}?t=${new Date().getTime()}`);
+        setProfileImagePreview(
+          `${currentUser.profileImage}?t=${new Date().getTime()}`
+        );
         console.log("Existing profile image set for preview.");
       }
     }
@@ -102,7 +108,10 @@ export default function SetupAccount() {
     if (formData.profileImage) {
       const objectUrl = URL.createObjectURL(formData.profileImage);
       setProfileImagePreview(objectUrl);
-      console.log("New profile image selected for preview:", formData.profileImage.name);
+      console.log(
+        "New profile image selected for preview:",
+        formData.profileImage.name
+      );
 
       return () => URL.revokeObjectURL(objectUrl);
     }
@@ -113,7 +122,10 @@ export default function SetupAccount() {
     if (formData.bannerImage) {
       const objectUrl = URL.createObjectURL(formData.bannerImage);
       setBannerImagePreview(objectUrl);
-      console.log("New banner image selected for preview:", formData.bannerImage.name);
+      console.log(
+        "New banner image selected for preview:",
+        formData.bannerImage.name
+      );
 
       return () => URL.revokeObjectURL(objectUrl);
     }
@@ -196,18 +208,23 @@ export default function SetupAccount() {
 
         console.log(`Uploading ${fieldName}:`, file.name);
 
-        const response = await fetch("http://localhost:8000/upload_azure", {
-          method: "POST",
-          body: uploadFormData,
-          headers: {
-            // Include any required headers here, such as authentication
-          },
-        });
+        const response = await fetch(
+          "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/upload_azure",
+          {
+            method: "POST",
+            body: uploadFormData,
+            headers: {
+              // Include any required headers here, such as authentication
+            },
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
           console.error(`Error uploading ${fieldName}:`, errorData.error);
-          throw new Error(errorData.error || `Image upload failed for ${fieldName}`);
+          throw new Error(
+            errorData.error || `Image upload failed for ${fieldName}`
+          );
         }
 
         const data = await response.json();
@@ -249,7 +266,10 @@ export default function SetupAccount() {
       // Upload Profile Image if a new one is selected
       if (formData.profileImage) {
         console.log("New profile image detected. Initiating upload.");
-        profileImageUrl = await uploadImage(formData.profileImage, "profileImage");
+        profileImageUrl = await uploadImage(
+          formData.profileImage,
+          "profileImage"
+        );
       } else if (removeProfileImage) {
         console.log("Profile image removal detected. Setting URL to null.");
         // If profile image is to be removed
@@ -281,21 +301,28 @@ export default function SetupAccount() {
         console.log("Social links added to user data:", userData.social);
       } else {
         userData.social = {}; // Clear social links if none provided
-        console.log("No social links provided. Clearing existing social links.");
+        console.log(
+          "No social links provided. Clearing existing social links."
+        );
       }
 
       console.log("User Data to Update:", userData);
 
       // 3. Update User Data via PUT /users/:id
-      console.log(`Sending PUT request to update user data for userId: ${userId}`);
-      const updateResponse = await fetch(`http://localhost:8000/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          // Include authentication headers if required (e.g., cookies handled automatically)
-        },
-        body: JSON.stringify(userData),
-      });
+      console.log(
+        `Sending PUT request to update user data for userId: ${userId}`
+      );
+      const updateResponse = await fetch(
+        `https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/users/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            // Include authentication headers if required (e.g., cookies handled automatically)
+          },
+          body: JSON.stringify(userData),
+        }
+      );
 
       if (!updateResponse.ok) {
         const errorData = await updateResponse.json();
@@ -336,11 +363,15 @@ export default function SetupAccount() {
 
   // If user is not authenticated, show a message
   if (!currentUser) {
-    console.log("User is not authenticated. Displaying authentication message.");
+    console.log(
+      "User is not authenticated. Displaying authentication message."
+    );
     return (
       <SidebarLayout>
         <div className="min-h-screen w-full flex items-center justify-center">
-          <p className="text-red-500">You need to be logged in to set up your account.</p>
+          <p className="text-red-500">
+            You need to be logged in to set up your account.
+          </p>
         </div>
       </SidebarLayout>
     );
@@ -356,15 +387,16 @@ export default function SetupAccount() {
           </h1>
 
           {error && (
-            <div className="mb-4 text-red-500 text-center">
-              {error}
-            </div>
+            <div className="mb-4 text-red-500 text-center">{error}</div>
           )}
 
           <form onSubmit={handleSubmit}>
             {/* Profile Banner */}
             <div className="mb-4">
-              <label htmlFor="profile-banner" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="profile-banner"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Profile Banner
               </label>
               <div className="flex items-center border border-gray-300 rounded-md p-3">
@@ -464,7 +496,10 @@ export default function SetupAccount() {
             {/* First and Last Name */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   First Name
                 </label>
                 <input
@@ -479,7 +514,10 @@ export default function SetupAccount() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Last Name
                 </label>
                 <input
@@ -497,7 +535,10 @@ export default function SetupAccount() {
 
             {/* Email */}
             <div className="mb-6">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <input
@@ -515,7 +556,10 @@ export default function SetupAccount() {
 
             {/* Bio */}
             <div className="mb-6">
-              <label htmlFor="about" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="about"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Bio
               </label>
               <textarea
@@ -536,7 +580,10 @@ export default function SetupAccount() {
             {/* Location and Phone Number */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="address"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Location
                 </label>
                 <input
@@ -550,7 +597,10 @@ export default function SetupAccount() {
                 />
               </div>
               <div>
-                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="phoneNumber"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Phone Number
                 </label>
                 <div className="flex">
@@ -579,7 +629,10 @@ export default function SetupAccount() {
 
             {/* Niche */}
             <div className="mb-6">
-              <label htmlFor="niche" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="niche"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Niche (optional)
               </label>
               <input
@@ -627,25 +680,32 @@ export default function SetupAccount() {
                 />
               </div>
               {/* Display existing social links */}
-              {currentUser.social && Object.keys(currentUser.social).length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Current Social Links:</h3>
-                  <ul className="list-disc list-inside text-sm text-gray-600">
-                    {Object.entries(currentUser.social).map(([platform, link]) => (
-                      <li key={platform}>
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-purple-600 hover:underline"
-                        >
-                          {platform.charAt(0).toUpperCase() + platform.slice(1)}: {link}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {currentUser.social &&
+                Object.keys(currentUser.social).length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Current Social Links:
+                    </h3>
+                    <ul className="list-disc list-inside text-sm text-gray-600">
+                      {Object.entries(currentUser.social).map(
+                        ([platform, link]) => (
+                          <li key={platform}>
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-purple-600 hover:underline"
+                            >
+                              {platform.charAt(0).toUpperCase() +
+                                platform.slice(1)}
+                              : {link}
+                            </a>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                )}
             </div>
 
             {/* Toggles */}
@@ -683,7 +743,9 @@ export default function SetupAccount() {
                     : "bg-purple-600 hover:bg-purple-700"
                 } text-white rounded-full px-6 py-3 text-lg`}
               >
-                {isSubmitting ? "Submitting..." : "Finish setup and go to Dashboard"}
+                {isSubmitting
+                  ? "Submitting..."
+                  : "Finish setup and go to Dashboard"}
               </button>
             </div>
           </form>
