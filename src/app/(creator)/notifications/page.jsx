@@ -12,7 +12,7 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import { useUser } from "@/context/userContext";
-import useSocket from "@/context/SocketContext"; // Import the socket context
+import useSocket from "@/context/socketContext"; // Import the socket context
 import axios from "axios";
 import { toast } from "react-toastify"; // For toast notifications
 

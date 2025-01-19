@@ -5,7 +5,7 @@ import SidebarLayout from "@/components/CreatorDashboardLayout";
 import { FaMoneyBillWave } from "react-icons/fa";
 import { FiDownload } from "react-icons/fi";
 import { useUser } from "@/context/userContext";
-import useSocket from "@/context/SocketContext"; // Import the socket context
+import useSocket from "@/context/socketContext"; // Import the socket context
 import axios from "axios";
 import { toast } from "react-toastify"; // Optional: For toast notifications
 
