@@ -1,5 +1,3 @@
-// /src/app/(fan)/home/page.jsx
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -7,7 +5,7 @@ import UserSidebarLayout from "@/components/FanDashboardLayout";
 import Image from "next/image";
 import { useUser } from "@/context/userContext";
 import axios from "axios";
-import { FiDollarSign, FiUpload } from "react-icons/fi"; // Icons for notification types
+import { FiDollarSign, FiUpload } from "react-icons/fi";
 
 function NotificationsPage() {
   const { user } = useUser();
@@ -16,6 +14,7 @@ function NotificationsPage() {
   const [filter, setFilter] = useState("all"); // 'all', 'payment', 'upload'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true); // To track if more notifications are available
 
   // Fetch notifications when the component mounts or user changes
   useEffect(() => {
@@ -27,16 +26,20 @@ function NotificationsPage() {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
+
+        // Fetch initial notifications
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/notifications`,
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/notifications`,
           {
-            headers: {
-              Authorization: `Bearer ${user.token}`, // Adjust according to your auth setup
-            },
+            params: { userID: user.id, limit: 20, skip: 0 }, // Fetch first 20
           }
         );
-        setNotifications(response.data.notifications);
+
+        setNotifications(response.data.notifications); // Use the 'notifications' key
         setFilteredNotifications(response.data.notifications);
+
+        // Check if more notifications are available
+        setHasMore(response.data.notifications.length === 20);
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
         setError("Failed to load notifications.");
@@ -47,6 +50,34 @@ function NotificationsPage() {
 
     fetchNotifications();
   }, [user]);
+
+  // Fetch more notifications for infinite scroll
+  const fetchMoreNotifications = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/notifications`,
+        {
+          params: {
+            userID: user.id,
+            limit: 20,
+            skip: notifications.length, // Skip already fetched notifications
+          },
+        }
+      );
+
+      // Append new notifications
+      setNotifications((prev) => [...prev, ...response.data.notifications]);
+      setFilteredNotifications((prev) => [
+        ...prev,
+        ...response.data.notifications,
+      ]);
+
+      // Update hasMore based on response
+      setHasMore(response.data.notifications.length === 20);
+    } catch (err) {
+      console.error("Failed to load more notifications:", err);
+    }
+  };
 
   // Filter notifications based on selected filter
   useEffect(() => {
@@ -62,16 +93,17 @@ function NotificationsPage() {
   // Handle marking a notification as read
   const handleMarkAsRead = async (id) => {
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/notifications/mark-as-read`,
-        { id },
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/notifications/${id}/read`,
+        null,
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
         }
       );
-      // Update the local state to mark as read
+
+      // Update local state to mark as read
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === id
@@ -94,7 +126,6 @@ function NotificationsPage() {
       );
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
-      // Optionally, display a user-facing error message
     }
   };
 
@@ -125,7 +156,16 @@ function NotificationsPage() {
         </div>
 
         {/* Loading State */}
-        {loading && <p>Loading notifications...</p>}
+        {loading && (
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="p-4 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+        )}
 
         {/* Error State */}
         {error && <p className="text-red-500">{error}</p>}
@@ -143,22 +183,20 @@ function NotificationsPage() {
               className={`flex items-start p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition ${
                 !notification.read ? "border-l-4 border-purple-600" : ""
               } cursor-pointer`}
-              onClick={() => !notification.read && handleMarkAsRead(notification.id)}
+              onClick={() =>
+                !notification.read && handleMarkAsRead(notification.id)
+              }
             >
               {/* Icon Based on Notification Type */}
               <div
                 className={`p-3 rounded-full bg-gray-100 ${
-                  notification.type === "payment"
+                  notification.type === "content_purchase"
                     ? "text-green-500"
-                    : notification.type === "upload"
-                    ? "text-blue-500"
                     : "text-gray-500"
                 }`}
               >
-                {notification.type === "payment" ? (
+                {notification.type === "content_purchase" ? (
                   <FiDollarSign size={24} />
-                ) : notification.type === "upload" ? (
-                  <FiUpload size={24} />
                 ) : (
                   <FiUpload size={24} />
                 )}
@@ -166,49 +204,27 @@ function NotificationsPage() {
 
               {/* Notification Details */}
               <div className="ml-4 flex-1">
-                <div className="flex items-center justify-between">
-                  <p
-                    className={`text-sm font-medium text-gray-900 ${
-                      !notification.read ? "font-semibold" : ""
-                    }`}
-                  >
-                    {notification.message}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(notification.date).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center mt-2">
-                  {notification.profileImage ? (
-                    <Image
-                      src={notification.profileImage}
-                      alt={`${notification.creator} Profile`}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
-                  ) : (
-                    <Image
-                      src="/placeholder-avatar.jpg"
-                      alt="Default Profile"
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
-                  )}
-                  <p className="ml-2 text-xs text-gray-600">
-                    {notification.creator}
-                  </p>
-                </div>
-                {notification.type === "payment" && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Amount: ${notification.amount}
-                  </p>
-                )}
+                <p className="text-sm font-medium text-gray-900">
+                  {notification.title}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">{notification.text}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(notification.createdAt).toLocaleString()}
+                </p>
               </div>
             </li>
           ))}
         </ul>
+
+        {/* Load More Button */}
+        {hasMore && !loading && (
+          <button
+            onClick={fetchMoreNotifications}
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+          >
+            Load More
+          </button>
+        )}
       </div>
     </UserSidebarLayout>
   );

@@ -4,6 +4,7 @@ import "./globals.css";
 // Import the UserProvider
 
 import { UserProvider } from "@/context/userContext";
+
 // Variable fonts
 const geistSans = localFont({
   src: [
@@ -39,9 +40,12 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* Wrap your app in UserProvider here */}
+        {/* Wrap your app in SocketProvider here */}
+        
         <UserProvider>
           {children}
         </UserProvider>
+        
       </body>
     </html>
   );

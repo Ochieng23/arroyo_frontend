@@ -1,237 +1,569 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useParams } from "next/navigation"; // Ensure correct import based on Next.js version
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
+
 import UserSidebarLayout from "@/components/FanDashboardLayout";
+import Modal from "@/components/Modal";
+import useSubscribe from "@/hooks/useSubscribe";
+import useUnsubscribe from "@/hooks/useUnsubscribe";
+import useUserSubscriptions from "@/hooks/useUserSubscriptions";
 import { useUser } from "@/context/userContext";
 
+/**
+ * Helper function to return SVG icons based on the platform.
+ * @param {string} platform - The name of the social platform.
+ * @returns {JSX.Element|null} The SVG icon or null if the platform is unsupported.
+ */
+const getSocialIcon = (platform) => {
+  const size = "20";
+  const icons = {
+    facebook: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-${size} w-${size}`}
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M22 12c0-5.522-4.478-10-10-10S2 6.478 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987H7.898v-2.891h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.891h-2.33v6.987C18.343 21.128 22 16.991 22 12z" />
+      </svg>
+    ),
+    twitter: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-${size} w-${size}`}
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M22.46 6c-.77.35-1.6.58-2.46.69a4.3 4.3 0 001.88-2.37 8.59 8.59 0 01-2.72 1.04A4.28 4.28 0 0016.11 4c-2.37 0-4.3 1.93-4.3 4.3 0 .34.04.67.12.99A12.17 12.17 0 013 5.15a4.28 4.28 0 001.33 5.73 4.27 4.27 0 01-1.95-.54v.05c0 2.08 1.48 3.82 3.44 4.22a4.3 4.3 0 01-1.93.07c.54 1.69 2.11 2.92 3.97 2.95A8.6 8.6 0 012 19.54a12.13 12.13 0 006.56 1.92c7.88 0 12.2-6.53 12.2-12.2 0-.19-.004-.38-.013-.57A8.72 8.72 0 0024 5.5a8.56 8.56 0 01-2.54.7z" />
+      </svg>
+    ),
+    // Add more platforms as needed
+  };
+
+  return icons[platform.toLowerCase()] || null;
+};
+
+/**
+ * Normalizes content data to ensure consistent structure.
+ * @param {Object} content - The content object from the API.
+ * @returns {Object} The normalized content object.
+ */
+const normalizeContent = (content) => ({
+  _id: content._id,
+  userId: content.user_id, // Updated from content.user to content.user_id
+  title: content.title || "Untitled Content",
+  about: content.about || "",
+  type: content.type || "unknown",
+  url: content.url || "",
+  thumbnail: content.thumbnail || "",
+  tags: content.tags || [],
+  priceType: content.priceType || "free",
+  price: content.price || 0,
+  createdAt: content.createdAt ? new Date(content.createdAt) : null,
+  updatedAt: content.updatedAt ? new Date(content.updatedAt) : null,
+  viewCount: content.viewCount || 0,
+});
+
+/**
+ * The main component for displaying a creator's profile.
+ */
 export default function CreatorProfilePage() {
-  const { id } = useParams();
-  const [creatorr, setCreator] = useState(null);
+  const { id } = useParams(); // Creator ID from route
+  const { user } = useUser(); // Current logged-in user
+
+  // State Hooks
+  const [creator, setCreator] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
   const [normalizedContents, setNormalizedContents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [userSubscription, setUserSubscription] = useState(null);
+  const [accessMap, setAccessMap] = useState({});
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedTier, setSelectedTier] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(null); // Tracks processing state
 
-  // State to manage user subscription
-  const [userSubscription, setUserSubscription] = useState(null); // null or subscription tier
-  const [isSubscribing, setIsSubscribing] = useState(false); // To handle subscription loading state
+  // Custom Hooks
+  const {
+    subscribe,
+    loading: subscribeLoading,
+    error: subscribeError,
+  } = useSubscribe();
+  const {
+    unsubscribe,
+    loading: unsubscribeLoading,
+    error: unsubscribeError,
+  } = useUnsubscribe();
+  const {
+    subscriptions,
+    loading: subsLoading,
+    error: subsError,
+  } = useUserSubscriptions();
 
-  // Normalization function to convert MongoDB-like fields to standard JS values
-  const normalizeContent = (content) => ({
-    _id: content._id?.$oid || content._id, // Fallback if already a string
-    userId: content.user?.$oid || content.user,
-    title: content.title || "Untitled Content",
-    about: content.about || "",
-    type: content.type || "unknown",
-    url: content.url || "",
-    thumbnail: content.thumbnail || "",
-    tags: content.tags || [],
-    priceType: content.priceType || "free", // Removed 'price' as it's now based on subscription
-    createdAt: content.createdAt ? new Date(content.createdAt) : null,
-    updatedAt: content.updatedAt ? new Date(content.updatedAt) : null,
-    viewCount: content.viewCount || 0,
-  });
+  // React Hook Form Instances
+  const {
+    register: registerPurchase,
+    handleSubmit: handleSubmitPurchase,
+    reset: resetPurchase,
+    formState: { errors: errorsPurchase },
+  } = useForm();
+  const {
+    register: registerSubscribe,
+    handleSubmit: handleSubmitSubscribe,
+    reset: resetSubscribe,
+    formState: { errors: errorsSubscribe },
+  } = useForm();
 
-  // Fetch the user (with all their data) by `id`
-  useEffect(() => {
+  /**
+   * Fetches the creator's data from the backend.
+   */
+  const fetchCreator = useCallback(async () => {
     if (!id) return;
 
-    const fetchCreator = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/users/${id}`);
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        const data = await res.json();
-        setCreator(data);
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await axios.get(`${BASE_URL}/users/${id}`, {
+        withCredentials: true,
+      });
 
-        // Normalize contents immediately after fetching
-        if (data.contents && Array.isArray(data.contents)) {
-          const normalized = data.contents.map(normalizeContent);
-          setNormalizedContents(normalized);
-        }
+      const data = response.data;
+      setCreator(data);
 
-        // TODO: Fetch user's subscription status for this creator
-        // Replace the following mock data with an actual API call
-        // Example: { tierId: "tier1", name: "Basic", price: 5 }
-        setUserSubscription(null); // Assume no subscription initially
-      } catch (error) {
-        console.error("Error fetching creator:", error);
-        setCreator(null);
-      } finally {
-        setLoading(false);
+      // Normalize and set contents
+      if (Array.isArray(data.contents)) {
+        const normalized = data.contents.map(normalizeContent);
+        setNormalizedContents(normalized);
       }
-    };
 
-    fetchCreator();
-  }, [id]);
+      // Find active subscription for this creator
+      if (Array.isArray(subscriptions)) {
+        const activeSub = subscriptions.find(
+          (sub) => sub.creator.toString() === id && sub.status === "active"
+        );
+        setUserSubscription(activeSub || null);
+      }
+    } catch (error) {
+      console.error("Error fetching creator:", error);
+      setCreator(null);
+      toast.error("Failed to load creator profile.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id, subscriptions]);
 
-  // Debounce search input to optimize performance
+  /**
+   * Checks access status for all contents.
+   */
+  const checkAccessForContents = useCallback(async () => {
+    if (!creator || !normalizedContents.length || !user) return;
+
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const contentIds = normalizedContents.map((content) => content._id);
+
+      const accessRequests = contentIds.map((contentId) =>
+        axios.get(`${BASE_URL}/content/${contentId}/access`, { // Updated endpoint
+          params: {
+            user_id: user.id, // Updated from user.id to user._id
+          },
+          withCredentials: true, // Ensure credentials are sent if required
+        })
+      );
+
+      const accessResponses = await Promise.all(accessRequests);
+
+      const newAccessMap = {};
+      accessResponses.forEach((response, index) => {
+        const contentId = contentIds[index];
+        newAccessMap[contentId] = response.data.accessGranted;
+      });
+
+      setAccessMap(newAccessMap);
+    } catch (error) {
+      console.error("Error checking access statuses:", error);
+      toast.error("Failed to fetch access statuses.");
+    }
+  }, [creator, normalizedContents, user]);
+
+  /**
+   * Debounces the search input to optimize performance.
+   */
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-    }, 300); // 300ms debounce
-
-    return () => {
-      clearTimeout(handler);
-    };
+    }, 300);
+    return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Handle loading and not found states
-  if (loading) {
-    return (
-      <UserSidebarLayout className="bg-gray-50 min-h-screen">
-        <p className="p-4">Loading creator profile...</p>
-      </UserSidebarLayout>
-    );
-  }
+  /**
+   * Fetches creator data on component mount or when `id` changes.
+   */
+  useEffect(() => {
+    fetchCreator();
+  }, [fetchCreator]);
 
-  if (!creatorr) {
-    return (
-      <UserSidebarLayout className="bg-gray-50 min-h-screen">
-        <p className="p-4">Creator not found.</p>
-      </UserSidebarLayout>
-    );
-  }
+  /**
+   * Checks access after contents are loaded or when user changes.
+   */
+  useEffect(() => {
+    if (normalizedContents.length && user) {
+      checkAccessForContents();
+    }
+  }, [normalizedContents, user, checkAccessForContents]);
 
-  // Destructure the fields from the user payload
-  const {
-    bannerImage,
-    profileImage,
-    firstName,
-    lastName,
-    about,
-    niche,
-    phoneNumber,
-    address,
-    email,
-    social = {}, // e.g. { facebook, x, youtube, ... }
-    libraries = [], // array of creator's libraries
-    creator = [], // Array of subscription tiers set by the creator
-  } = creatorr;
-
-  // Prepare fallback images
-  const bannerSrc =
-    bannerImage || "https://via.placeholder.com/1200x400?text=No+Banner";
-  const avatarSrc =
-    profileImage || "https://via.placeholder.com/200?text=No+Avatar";
-
-  // Handle Search Filtering
-  const filteredContents = normalizedContents.filter((content) => {
-    const query = debouncedSearch.toLowerCase();
-    const titleMatch = content.title.toLowerCase().includes(query);
-    const tagsMatch = content.tags.some((tag) =>
-      tag.toLowerCase().includes(query)
-    );
-    return titleMatch || tagsMatch;
-  });
-
-  // Handle Subscription Action
-  const handleSubscribe = async (tier) => {
-    // TODO: Implement actual subscription logic (e.g., integrate with payment gateway)
-    // For demonstration, we'll simulate a subscription with a timeout
-    setIsSubscribing(tier.id);
-    try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // After successful subscription, update the userSubscription
-      setUserSubscription(tier);
-
-      alert(`Subscribed to ${tier.name} tier successfully!`);
-    } catch (error) {
-      console.error("Subscription failed:", error);
-      alert("Subscription failed. Please try again.");
-    } finally {
-      setIsSubscribing(false);
+  /**
+   * Handles the subscribe button click.
+   * @param {Object|null} tier - The subscription tier selected or null.
+   */
+  const handleSubscribeClick = (tier) => {
+    if (tier) {
+      setSelectedTier(tier);
+      setIsSubscribeModalOpen(true);
+    } else {
+      setActiveTab("subscriptions");
+      toast.info("Please select a subscription tier from the Subscriptions tab.");
     }
   };
 
+  /**
+   * Handles the purchase button click.
+   * @param {Object} item - The content item selected for purchase.
+   */
+  const handlePurchaseClick = (item) => {
+    setSelectedItem(item);
+    setIsPurchaseModalOpen(true);
+  };
+
+  /**
+   * Initializes subscription payment with Paystack.
+   * @param {Object} data - The form data submitted.
+   */
+  const onSubmitSubscribe = async (data) => {
+    if (!selectedTier) return;
+
+    const paystackAmount = parseFloat(selectedTier.price.toFixed(2)) * 100; // Convert to kobo
+    const paystackReference = uuidv4();
+
+    const billingAddress = {
+      name: data.name,
+      address_line1: data.address_line1,
+      address_line2: data.address_line2,
+      city: data.city,
+      state: data.state,
+      postal_code: data.postal_code,
+      country: data.country,
+    };
+
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+      const paystackPayload = {
+        paystack_reference: paystackReference,
+        email: user?.email,
+        amount: paystackAmount,
+        callback_url: `${window.location.origin}/payment-callback`,
+        subaccount: creator?.creator?.subaccountCode, // Updated from creatorInfo to creator
+        metadata: {
+          userId: user?.id, // Updated from user.id to user._id
+          creatorId: creator?.creator?._id, // Updated from creatorInfo to creator
+          purchaseType: "subscription",
+          subscriptionUuid: uuidv4(),
+          billingAddress,
+        },
+      };
+
+      console.log("=== [DEBUG] Subscription Payload ===");
+      console.log(JSON.stringify(paystackPayload, null, 2));
+
+      setIsProcessing(selectedTier._id);
+
+      const response = await axios.post(
+        `${BASE_URL}/payments/paystack/initialize`, // Updated endpoint
+        paystackPayload,
+        { withCredentials: true }
+      );
+
+      if (response.data.authorization_url) {
+        window.location.href = response.data.authorization_url;
+      } else {
+        throw new Error("No Paystack authorization_url received.");
+      }
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast.error(error.response?.data?.message || "Subscription failed.");
+    } finally {
+      setIsSubscribeModalOpen(false);
+      setSelectedTier(null);
+      resetSubscribe();
+      setIsProcessing(null);
+    }
+  };
+
+  /**
+   * Initializes individual purchase payment with Paystack.
+   * @param {Object} data - The form data submitted.
+   */
+  const onSubmitPurchase = async (data) => {
+    if (!selectedItem) return;
+
+    const paystackAmount = parseFloat(selectedItem.price.toFixed(2)) * 100; // Convert to kobo
+    const paystackReference = uuidv4();
+
+    const billingAddress = {
+      name: data.name,
+      address_line1: data.address_line1,
+      address_line2: data.address_line2,
+      city: data.city,
+      state: data.state,
+      postal_code: data.postal_code,
+      country: data.country,
+    };
+
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+      const paystackPayload = {
+        paystack_reference: paystackReference,
+        email: user?.email,
+        amount: paystackAmount,
+        callback_url: `${window.location.origin}/payment-callback`,
+        subaccount: creator?.creator?.subaccountCode, // Updated from creatorInfo to creator
+        metadata: {
+          userId: user?.id, // Updated from user.id to user._id
+          creatorId: creator?.creator?._id, // Updated from creatorInfo to creator
+          contentId: selectedItem?._id,
+          purchaseType: "individual",
+          billingAddress,
+        },
+      };
+
+      console.log("=== [DEBUG] Purchase Payload ===");
+      console.log(JSON.stringify(paystackPayload, null, 2));
+
+      setIsProcessing(selectedItem._id);
+
+      const response = await axios.post(
+        `${BASE_URL}/payments/paystack/initialize`, // Updated endpoint
+        paystackPayload,
+        { withCredentials: true }
+      );
+
+      if (response.data.authorization_url) {
+        window.location.href = response.data.authorization_url;
+      } else {
+        throw new Error("No Paystack authorization_url received.");
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      toast.error(error.response?.data?.message || "Purchase failed.");
+    } finally {
+      setIsPurchaseModalOpen(false);
+      setSelectedItem(null);
+      resetPurchase();
+      setIsProcessing(null);
+    }
+  };
+
+  /**
+   * Handles unsubscribing from a subscription tier.
+   */
+  const handleUnsubscribe = async () => {
+    if (!userSubscription) return;
+
+    try {
+      await unsubscribe(userSubscription._id);
+      setUserSubscription(null);
+      toast.success("Unsubscribed successfully.");
+      // Refetch access statuses after unsubscribing
+      checkAccessForContents();
+    } catch (error) {
+      console.error("Error unsubscribing:", error);
+      toast.error(error.response?.data?.message || "Unsubscription failed.");
+    }
+  };
+
+  /**
+   * Filters contents based on the debounced search query.
+   */
+  const filteredContents = useMemo(() => {
+    const query = debouncedSearch.toLowerCase();
+    return normalizedContents.filter(
+      (content) =>
+        content.title.toLowerCase().includes(query) ||
+        content.tags.some((tag) => tag.toLowerCase().includes(query))
+    );
+  }, [debouncedSearch, normalizedContents]);
+
+  /**
+   * Extracts social platforms with valid URLs.
+   */
+  const socialPlatforms = useMemo(() => {
+    if (!creator?.creator?.social) return []; // Updated from creatorInfo to creator
+
+    const { social } = creator.creator; // Updated from creatorInfo to creator
+
+    const platforms = [
+      "facebook",
+      "x",
+      "youtube",
+      "spotify",
+      "instagram",
+      "tiktok",
+      "pinterest",
+    ];
+
+    return platforms
+      .map((platform) => [platform, social[platform]])
+      .filter(([_, url]) => url && url.trim() !== "");
+  }, [creator]);
+
+  /**
+   * Extracts subscription tiers.
+   */
+  const subscriptionTiers = useMemo(() => {
+    return creator?.creator?.subscriptionTiers || []; // Updated from creatorInfo to creator
+  }, [creator]);
+
+  /**
+   * Renders the component.
+   */
   return (
     <UserSidebarLayout className="bg-gray-50 min-h-screen">
       {/* Banner */}
       <header className="relative w-full h-64 overflow-hidden">
         <img
-          src={bannerSrc}
+          src={creator?.bannerImage || "https://via.placeholder.com/1200x400?text=No+Banner"}
           alt="Creator Banner"
           className="object-cover w-full h-full"
         />
       </header>
 
-      {/* Profile Section */}
+      {/* Profile */}
       <section className="relative flex flex-col items-center px-4">
-        {/* Avatar overlaps banner */}
         <div className="w-32 h-32 rounded-full overflow-hidden -mt-16 shadow-lg border-4 border-white">
           <img
-            src={avatarSrc}
+            src={creator?.profileImage || "https://via.placeholder.com/200?text=No+Avatar"}
             alt="Creator Avatar"
             className="object-cover w-full h-full"
           />
         </div>
-
         <h1 className="mt-4 text-2xl font-bold">
-          {firstName} {lastName}
+          {creator?.firstName} {creator?.lastName}
         </h1>
-        <p className="italic text-gray-600 mb-1">{about || "No bio yet..."}</p>
-
-        {niche && (
+        <p className="italic text-gray-600 mb-1">{creator?.about || "No bio yet..."}</p>
+        {creator?.niche && (
           <p className="text-sm text-gray-500 mb-2">
-            <strong>Niche:</strong> {niche}
+            <strong>Niche:</strong> {creator.niche}
           </p>
         )}
+
+        {/* Social Links */}
+        <div className="flex space-x-4 mt-2">
+          {socialPlatforms.map(([platform, url]) => (
+            <a
+              key={platform}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-500 hover:text-blue-500"
+              aria-label={platform}
+            >
+              {getSocialIcon(platform)}
+            </a>
+          ))}
+        </div>
       </section>
 
-      {/* Navigation Tabs */}
+      {/* Tabs */}
       <nav className="bg-white border-t border-b border-gray-200">
         <ul className="flex justify-center space-x-6 text-gray-700 font-medium">
-          <li>
-            <button
-              onClick={() => setActiveTab("home")}
-              className={`block px-4 py-3 hover:bg-gray-100 ${
-                activeTab === "home" ? "text-blue-600" : ""
-              }`}
-            >
-              Home
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab("about")}
-              className={`block px-4 py-3 hover:bg-gray-100 ${
-                activeTab === "about" ? "text-blue-600" : ""
-              }`}
-            >
-              About
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab("subscriptions")}
-              className={`block px-4 py-3 hover:bg-gray-100 ${
-                activeTab === "subscriptions" ? "text-blue-600" : ""
-              }`}
-            >
-              Subscriptions
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => setActiveTab("collections")}
-              className={`block px-4 py-3 hover:bg-gray-100 ${
-                activeTab === "collections" ? "text-blue-600" : ""
-              }`}
-            >
-              Collections
-            </button>
-          </li>
+          {["home", "about", "subscriptions", "collections"].map((tab) => (
+            <li key={tab}>
+              <button
+                onClick={() => setActiveTab(tab)}
+                className={`block px-4 py-3 hover:bg-gray-100 ${
+                  activeTab === tab ? "text-blue-600" : ""
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            </li>
+          ))}
         </ul>
       </nav>
 
       {/* Tab Content */}
       <section className="max-w-5xl mx-auto px-4 py-8">
-        {/* HOME TAB: Show content based on subscription */}
+        {/* SUBSCRIPTIONS Tab */}
+        {activeTab === "subscriptions" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Subscriptions</h2>
+            {subsLoading ? (
+              <p>Loading subscription tiers...</p>
+            ) : subscriptionTiers.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subscriptionTiers.map((tier) => {
+                  const isCurrentTier =
+                    userSubscription &&
+                    userSubscription.tier.toString() === tier._id.toString();
+
+                  return (
+                    <div
+                      key={tier._id}
+                      className={`border rounded-lg p-6 flex flex-col ${
+                        isCurrentTier ? "border-blue-500" : "border-gray-300"
+                      }`}
+                    >
+                      <h3 className="text-xl font-semibold mb-2">{tier.name}</h3>
+                      <p className="text-gray-600 mb-4">{tier.description}</p>
+                      <p className="text-2xl font-bold mb-4">
+                        KES {tier.price.toFixed(2)} / month
+                      </p>
+
+                      {isCurrentTier ? (
+                        <button
+                          className="mt-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded"
+                          onClick={handleUnsubscribe}
+                          disabled={unsubscribeLoading}
+                        >
+                          {unsubscribeLoading ? "Processing..." : "Unsubscribe"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleSubscribeClick(tier)}
+                          className="mt-auto bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
+                          disabled={subscribeLoading}
+                        >
+                          {subscribeLoading
+                            ? "Processing..."
+                            : `Subscribe to ${tier.name}`}
+                        </button>
+                      )}
+                      {subscribeError && (
+                        <p className="text-red-500 mt-2">{subscribeError}</p>
+                      )}
+                      {unsubscribeError && (
+                        <p className="text-red-500 mt-2">{unsubscribeError}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p>No subscription tiers available for this creator.</p>
+            )}
+          </div>
+        )}
+
+        {/* HOME Tab */}
         {activeTab === "home" && (
           <div>
             {/* Search Bar */}
@@ -250,16 +582,15 @@ export default function CreatorProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredContents.map((item) => {
                   const isFree = item.priceType === "free";
-                  const hasAccess = isFree || userSubscription;
+                  const hasAccess = accessMap[item._id] || isFree;
 
                   return (
                     <div
                       key={item._id}
                       className="bg-white rounded-lg overflow-hidden shadow-lg flex flex-col"
                     >
-                      {/* Content Display */}
+                      {/* Thumbnail / Video */}
                       <div className="relative h-48">
-                        {/* For Videos */}
                         {item.type === "video" ? (
                           hasAccess ? (
                             <video
@@ -274,18 +605,17 @@ export default function CreatorProfilePage() {
                             <img
                               src={
                                 item.thumbnail ||
-                                "https://via.placeholder.com/400x200"
+                                "https://via.placeholder.com/400x200?text=No+Thumbnail"
                               }
                               alt={item.title}
                               className="w-full h-full object-cover filter blur-sm"
                             />
                           )
                         ) : (
-                          // For Images and Downloadables
                           <img
                             src={item.url}
                             alt={item.title}
-                            className={`w-full h-full object-cover transition-transform duration-300 ${
+                            className={`w-full h-full object-cover ${
                               !hasAccess ? "filter blur-sm" : ""
                             }`}
                           />
@@ -306,14 +636,8 @@ export default function CreatorProfilePage() {
                             : item.about}
                         </p>
 
-                        {/* Render Content Based on Access and Type */}
                         {hasAccess && (
                           <>
-                            {item.type === "video" && (
-                              // Video already rendered above
-                              <></>
-                            )}
-
                             {item.type === "image" && (
                               <img
                                 src={item.url}
@@ -321,7 +645,6 @@ export default function CreatorProfilePage() {
                                 className="w-full h-32 object-cover rounded"
                               />
                             )}
-
                             {item.type === "downloadable" && (
                               <a
                                 href={item.url}
@@ -331,28 +654,38 @@ export default function CreatorProfilePage() {
                                 Download
                               </a>
                             )}
-
-                            {/* Add more content types as needed */}
                           </>
                         )}
 
-                        {/* Subscription Prompt */}
                         {!hasAccess && !isFree && (
                           <div className="mt-auto">
                             <p className="text-gray-700 mb-2">
-                              Subscribe to access this content.
+                              {userSubscription
+                                ? "Upgrade your subscription to access this content."
+                                : "Subscribe or purchase to access this content."}
                             </p>
-                            <button
-                              onClick={() => setActiveTab("subscriptions")}
-                              className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded"
-                            >
-                              View Subscriptions
-                            </button>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handlePurchaseClick(item)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                                disabled={isProcessing === item._id}
+                              >
+                                {isProcessing === item._id
+                                  ? "Processing..."
+                                  : `Buy for KES ${item.price.toFixed(2)}`}
+                              </button>
+                              <button
+                                onClick={() => handleSubscribeClick(null)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded"
+                              >
+                                Subscribe
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Footer Section */}
+                      {/* Footer */}
                       <div className="flex items-center justify-between p-4 border-t border-gray-200">
                         <div className="flex items-center space-x-4">
                           <span className="flex items-center space-x-1 text-gray-500">
@@ -390,7 +723,6 @@ export default function CreatorProfilePage() {
                             <span>74</span>
                           </span>
                         </div>
-                        {/* Action Button (e.g., Share) */}
                         <button className="text-gray-500 hover:text-gray-700">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -413,99 +745,41 @@ export default function CreatorProfilePage() {
                 })}
               </div>
             ) : (
-              <p>No content available for this creator.</p>
+              <p>No content found.</p>
             )}
           </div>
         )}
 
-        {/* SUBSCRIPTIONS TAB: Show subscription tiers and allow subscribing */}
-        {/* SUBSCRIPTIONS TAB: Show subscription tiers and allow subscribing */}
-        {activeTab === "subscriptions" && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Subscriptions</h2>
-            {creator?.subscriptionTiers?.length ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {creator?.subscriptionTiers.map((tier) => {
-                  const isCurrentTier =
-                    userSubscription && userSubscription.id === tier._id;
-
-                  return (
-                    <div
-                      key={tier._id}
-                      className={`border rounded-lg p-6 flex flex-col ${
-                        isCurrentTier ? "border-blue-500" : "border-gray-300"
-                      }`}
-                    >
-                      <h3 className="text-xl font-semibold mb-2">
-                        {tier.name}
-                      </h3>
-                      <p className="text-gray-600 mb-4">{tier.description}</p>
-                      <p className="text-2xl font-bold mb-4">
-                        KES {tier.price} / month
-                      </p>
-                      {isCurrentTier ? (
-                        <button
-                          className="mt-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded"
-                          onClick={() => {
-                            // TODO: Implement unsubscribe logic
-                            alert(
-                              "Unsubscribe functionality to be implemented."
-                            );
-                          }}
-                        >
-                          Unsubscribe
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleSubscribe(tier)}
-                          className="mt-auto bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
-                          disabled={isSubscribing === tier._id}
-                        >
-                          {isSubscribing === tier._id
-                            ? "Processing..."
-                            : `Subscribe to ${tier.name}`}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p>No subscription tiers available for this creator.</p>
-            )}
-          </div>
-        )}
-
-        {/* ABOUT TAB: Show about info, plus contact details */}
+        {/* ABOUT Tab */}
         {activeTab === "about" && (
           <div>
             <h2 className="text-2xl font-bold mb-4">About</h2>
-            <p>{about || "No bio available for this creator."}</p>
-            {email && (
+            <p>{creator?.about || "No bio available for this creator."}</p>
+            {creator?.creator?.email && ( // Updated from creatorInfo to creator
               <p className="text-gray-700 mt-2">
-                <strong>Email:</strong> {email}
+                <strong>Email:</strong> {creator.creator.email}
               </p>
             )}
-            {phoneNumber && (
+            {creator?.creator?.phoneNumber && ( // Updated from creatorInfo to creator
               <p className="text-gray-700">
-                <strong>Phone:</strong> {phoneNumber}
+                <strong>Phone:</strong> {creator.creator.phoneNumber}
               </p>
             )}
-            {address && (
+            {creator?.creator?.address && ( // Updated from creatorInfo to creator
               <p className="text-gray-700">
-                <strong>Address:</strong> {address}
+                <strong>Address:</strong> {creator.creator.address}
               </p>
             )}
           </div>
         )}
 
-        {/* COLLECTIONS TAB: Show the creator’s libraries */}
+        {/* COLLECTIONS Tab */}
         {activeTab === "collections" && (
           <div>
             <h2 className="text-2xl font-bold mb-4">Collections</h2>
-            {libraries.length ? (
+            {creator?.creator?.libraries && creator.creator.libraries.length ? ( // Updated from creatorInfo to creator
               <ul className="list-disc list-inside space-y-2">
-                {libraries.map((library) => (
+                {creator.creator.libraries.map((library) => (
                   <li key={library._id}>{library.name}</li>
                 ))}
               </ul>
@@ -515,6 +789,82 @@ export default function CreatorProfilePage() {
           </div>
         )}
       </section>
+
+      {/* Purchase Modal */}
+      {selectedItem && (
+        <Modal
+          isOpen={isPurchaseModalOpen}
+          closeModal={() => {
+            setIsPurchaseModalOpen(false);
+            setSelectedItem(null);
+            resetPurchase();
+            setIsProcessing(null);
+          }}
+          title={`Purchase: ${selectedItem.title}`}
+        >
+          <form onSubmit={handleSubmitPurchase(onSubmitPurchase)}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                {...registerPurchase("name", { required: true })}
+                type="text"
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                  errorsPurchase.name ? "border-red-500" : ""
+                }`}
+              />
+              {errorsPurchase.name && (
+                <p className="text-red-500 text-sm mt-1">Name is required.</p>
+              )}
+            </div>
+            {/* Additional billing fields can be added here */}
+            <button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+              disabled={isProcessing === selectedItem._id}
+            >
+              {isProcessing === selectedItem._id ? "Processing..." : "Submit Purchase"}
+            </button>
+          </form>
+        </Modal>
+      )}
+
+      {/* Subscribe Modal */}
+      {selectedTier && (
+        <Modal
+          isOpen={isSubscribeModalOpen}
+          closeModal={() => {
+            setIsSubscribeModalOpen(false);
+            setSelectedTier(null);
+            resetSubscribe();
+            setIsProcessing(null);
+          }}
+          title={`Subscribe to ${selectedTier.name}`}
+        >
+          <form onSubmit={handleSubmitSubscribe(onSubmitSubscribe)}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                {...registerSubscribe("name", { required: true })}
+                type="text"
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+                  errorsSubscribe.name ? "border-red-500" : ""
+                }`}
+              />
+              {errorsSubscribe.name && (
+                <p className="text-red-500 text-sm mt-1">Name is required.</p>
+              )}
+            </div>
+            {/* Additional billing fields can be added here */}
+            <button
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded"
+              disabled={isProcessing === selectedTier._id}
+            >
+              {isProcessing === selectedTier._id ? "Processing..." : "Submit Subscription"}
+            </button>
+          </form>
+        </Modal>
+      )}
     </UserSidebarLayout>
   );
 }

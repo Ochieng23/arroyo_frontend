@@ -22,8 +22,8 @@ const UserSidebarLayout = ({ children }) => {
   const router = useRouter();
   const { user, setUser, userDetails, loadingUserDetails, userDetailsError } = useUser();
 
-  console.log("User in SidebarLayout:", user);
-  console.log("UserDetails in SidebarLayout:", userDetails);
+  // console.log("User in UserSidebarLayout:", user);
+  // console.log("UserDetails in UserSidebarLayout:", userDetails);
 
   useEffect(() => {
     // Update active menu item based on pathname
@@ -68,6 +68,11 @@ const UserSidebarLayout = ({ children }) => {
       label: "Explore",
     },
     {
+      href: "/content",
+      icon: <FiCompass size={20} />,
+      label: "My Content",
+    },
+    {
       href: "/updates",
       icon: <FiBell size={20} />,
       label: "Updates",
@@ -94,7 +99,7 @@ const UserSidebarLayout = ({ children }) => {
             <div className="w-16 h-16 rounded-full bg-gray-300 animate-pulse mb-3"></div>
           ) : userDetails ? (
             <Image
-              src={userDetails.profileImage || "/images/default-avatar.png"} // Ensure this path exists
+              src={userDetails.profileImage || " "} // Ensure this path exists
               alt={`${userDetails.name || userDetails.email} Profile`}
               width={64}
               height={64}

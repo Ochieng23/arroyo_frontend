@@ -25,7 +25,7 @@ const SidebarLayout = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("https://caziniai.azurewebsites.net/auth/logout", {
+      const response = await fetch("http://localhost:8000/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -56,11 +56,11 @@ const SidebarLayout = ({ children }) => {
         icon: <HiOutlineSpeakerphone size={17} />,
         label: "Upload Content",
       },
-    {
-      href: "/insights",
-      icon: <FiBarChart2 size={17} />,
-      label: "Insights",
-    },
+    // {
+    //   href: "/insights",
+    //   icon: <FiBarChart2 size={17} />,
+    //   label: "Insights",
+    // },
     {
       href: "/payouts",
       icon: <FiDollarSign size={17} />,

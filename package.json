@@ -6,15 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-     "lint": "next lint"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.7.9",
     "next": "14.2.3",
+    "paystack": "^2.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-icons": "^5.4.0"
+    "react-hook-form": "^7.54.2",
+    "react-icons": "^5.4.0",
+    "react-toastify": "^11.0.2",
+    "socket.io-client": "^4.8.1",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "eslint": "^8",

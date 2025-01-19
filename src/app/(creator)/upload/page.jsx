@@ -1,5 +1,4 @@
 "use client";
-
 import React, {
   useState,
   useEffect,
@@ -25,7 +24,7 @@ import { useUser } from "@/context/userContext";
 
 export default function UploadContent() {
   const router = useRouter(); // Initialize useRouter
-  const { user, loading: userLoading } = useUser(); // 'loading' renamed to 'userLoading' to avoid confusion
+  const { user, userDetails, loading: userLoading } = useUser(); // 'loading' renamed to 'userLoading' to avoid confusion
   const [contentType, setContentType] = useState("video"); // default: video
   const [file, setFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -52,7 +51,7 @@ export default function UploadContent() {
   const thumbnailInputRef = useRef(null);
 
   // API Base URL from environment variables
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Fetch user details from backend based on user.id
   const fetchUserDetails = useCallback(async () => {
@@ -294,6 +293,12 @@ export default function UploadContent() {
         return;
       }
 
+      // Ensure 'creator_id' exists
+      if (!userDetails.creator || !userDetails.creator._id) {
+        setError("Creator information is missing.");
+        return;
+      }
+
       setError("");
       setIsProcessing(true);
       setSuccessMessage("");
@@ -361,16 +366,17 @@ export default function UploadContent() {
 
         // 3. Create content data with the file and thumbnail URLs
         const contentData = {
-          user_id: user.id, // Safe now
+          user_id: user.id, // Ensure 'user.id' is correct
+          creator_id: userDetails.creator._id, // Updated line
           title: title.trim(),
-          about: about.trim(), // Include the 'about' field
+          about: about.trim(),
           type: contentType,
           url: fileUrl,
-          thumbnail: thumbnailUrl, // Ensure thumbnail is set
+          thumbnail: thumbnailUrl,
           tags: tags,
-          library: selectedLibrary || null, // 'library' now
-          price: priceType === "paid" ? parseFloat(price) : 0, // Include price
-          priceType: priceType, // Include priceType
+          libraryId: selectedLibrary || null, // Ensure consistency
+          price: priceType === "paid" ? parseFloat(price) : 0,
+          priceType: priceType,
         };
 
         const contentResponse = await fetch(`${API_BASE_URL}/content`, {
@@ -395,7 +401,7 @@ export default function UploadContent() {
         setSuccessMessage("Content uploaded and stored successfully!");
 
         // Optionally, redirect to the content page
-        router.push(`/content/${createdContent.id}`);
+        router.push(`/content/${createdContent.content._id}`); // Adjust based on response structure
 
         // Reset form
         handleRemoveFile();
@@ -427,6 +433,7 @@ export default function UploadContent() {
       handleRemoveThumbnail,
       API_BASE_URL,
       user,
+      userDetails, // Add userDetails as a dependency
       router, // Include router in dependencies
     ]
   );

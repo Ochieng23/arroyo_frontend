@@ -38,7 +38,7 @@ export function UserProvider({ children }) {
 
   // useEffect to save or remove user in localStorage when user state changes
   useEffect(() => {
-    console.log("User state changed:", user);
+    // console.log("User state changed:", user);
     if (typeof window !== "undefined") {
       try {
         if (user) {
@@ -68,13 +68,13 @@ export function UserProvider({ children }) {
       setLoadingUserDetails(true);
       setUserDetailsError(null);
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         if (!apiBaseUrl) {
           throw new Error("API base URL is not defined in environment variables.");
         }
 
         const url = `${apiBaseUrl}/users/${user.id}`;
-        console.log("Fetching userDetails from:", url);
+        // console.log("Fetching userDetails from:", url);
 
         const response = await fetch(url);
 
@@ -84,7 +84,7 @@ export function UserProvider({ children }) {
         }
 
         const data = await response.json();
-        console.log("Fetched userDetails:", data);
+        // console.log("Fetched userDetails:", data);
         setUserDetails(data);
       } catch (error) {
         console.error("Failed to fetch user details", error);
@@ -97,8 +97,8 @@ export function UserProvider({ children }) {
     fetchUserDetails();
   }, [user?.id]);
 
-  console.log("User in Context:", user);
-  console.log("UserDetails in Context:", userDetails);
+  // console.log("User in Context:", user);
+  // console.log("UserDetails in Context:", userDetails);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
