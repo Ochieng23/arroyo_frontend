@@ -22,12 +22,15 @@ export default function Login() {
     e.preventDefault();
     try {
       // Make POST request to your backend
-      const response = await fetch("http://localhost:8000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        // credentials: 'include' if you need cookies for sessions
-      });
+      const response = await fetch(
+        "https://arroyob-ducqdydbheaxd9as.eastus-01.azurewebsites.net/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          // credentials: 'include' if you need cookies for sessions
+        }
+      );
 
       if (!response.ok) {
         // Handle server error or unauthorized
@@ -41,7 +44,7 @@ export default function Login() {
 
       // Update context with the user object from the response
       // (This triggers localStorage to update as well, thanks to your context logic)
-      setUser(data.user); 
+      setUser(data.user);
 
       // Check the user role for redirect
       const userRole = data.user?.role;
